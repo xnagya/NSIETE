@@ -22,10 +22,10 @@ config = Namespace(
     normalized_weight_init = False,
     initial_bias = 0, 
     activation_fn = "sigmoid", # sigmoid | tanh | softsign | optimal
-    neurons_hidden1 = 1000,
-    neurons_hidden2 = 1000,
-    neurons_hidden3 = 1000,
-    neurons_hidden4 = 1000
+    neurons_hidden1 = 50,
+    neurons_hidden2 = 50,
+    neurons_hidden3 = 50,
+    neurons_hidden4 = 50
 )
 
 def config_to_dict(ns: Namespace):
@@ -118,8 +118,6 @@ class MultiLayerPerceptron(nn.Module):
                 layers.update({"sig3" : nn.Sigmoid()})
                 layers.update({"hidden4" : nn.Linear(config.neurons_hidden3, config.neurons_hidden4, dtype = torch.float64)})
                 layers.update({"sig4" : nn.Sigmoid()})
-                layers.update({"output" : nn.Linear(config.neurons_hidden4, 1, dtype = torch.float64)})
-                layers.update({"sig_OUT" : nn.Sigmoid()})
 
             case "tanh":
                 layers.update({"tanh1" : nn.Tanh()})
@@ -129,8 +127,6 @@ class MultiLayerPerceptron(nn.Module):
                 layers.update({"tanh3" : nn.Tanh()})
                 layers.update({"hidden4" : nn.Linear(config.neurons_hidden3, config.neurons_hidden4, dtype = torch.float64)})
                 layers.update({"tanh4" : nn.Tanh()})
-                layers.update({"output" : nn.Linear(config.neurons_hidden4, 1, dtype = torch.float64)})
-                layers.update({"tanh_OUT" : nn.Tanh()})
 
             case "softsign":
                 layers.update({"softs1" : nn.Softsign()})
@@ -140,8 +136,6 @@ class MultiLayerPerceptron(nn.Module):
                 layers.update({"softs3" : nn.Softsign()})
                 layers.update({"hidden4" : nn.Linear(config.neurons_hidden3, config.neurons_hidden4, dtype = torch.float64)})
                 layers.update({"softs4" : nn.Softsign()})
-                layers.update({"output" : nn.Linear(config.neurons_hidden4, 1, dtype = torch.float64)})
-                layers.update({"softs_OUT" : nn.Softsign()})
                 
             case _ :
                 if (config.activation_fn != "optimal"):
@@ -149,13 +143,15 @@ class MultiLayerPerceptron(nn.Module):
 
                 layers.update({"relu1" : nn.ReLU()})
                 layers.update({"hidden2" : nn.Linear(config.neurons_hidden1, config.neurons_hidden2, dtype = torch.float64)})
-                layers.update({"softs2" : nn.Softsign()})
+                layers.update({"relu2" : nn.ReLU()})
                 layers.update({"hidden3" : nn.Linear(config.neurons_hidden2, config.neurons_hidden3, dtype = torch.float64)})
                 layers.update({"relu3" : nn.ReLU()})
                 layers.update({"hidden4" : nn.Linear(config.neurons_hidden3, config.neurons_hidden4, dtype = torch.float64)})
                 layers.update({"relu4" : nn.ReLU()})
-                layers.update({"output" : nn.Linear(config.neurons_hidden4, 1, dtype = torch.float64)})
-                layers.update({"softs_OUT" : nn.Softsign()})
+
+        # Output 
+        layers.update({"output" : nn.Linear(config.neurons_hidden4, 1, dtype = torch.float64)})
+        layers.update({"sig_OUT" : nn.Sigmoid()})
 
         self.network = nn.Sequential(layers)
         self.init_weights()
