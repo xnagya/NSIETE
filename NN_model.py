@@ -18,14 +18,14 @@ config = Namespace(
     batch_size = 128,
 
     # Model parameters
-    learning_rate = 0.001,
+    learning_rate = 0.0001,
     normalized_weight_init = False,
     initial_bias = 0, 
     activation_fn = "sigmoid", # sigmoid | tanh | softsign | optimal
-    neurons_hidden1 = 50,
-    neurons_hidden2 = 50,
-    neurons_hidden3 = 50,
-    neurons_hidden4 = 50
+    neurons_hidden1 = 30,
+    neurons_hidden2 = 30,
+    neurons_hidden3 = 30,
+    neurons_hidden4 = 30
 )
 
 def config_to_dict(ns: Namespace):
@@ -50,15 +50,13 @@ def normalize_dataset():
 # %%
 class Metrics:
     def __init__(self, y_true, y_pred):
+
         # Transorm predictions to classes
-        if normalize_dataset():
-            class_pred = binary_cutoff(y_pred, -1, 0,  1)
-        else:
-            class_pred = binary_cutoff(y_pred, 0, 0.5, 1)
+        class_pred = binary_cutoff(y_pred, 0, 0.5, 1)
 
         # Confusion matrix
         tn, fp, fn, tp = confusion_matrix(y_true, class_pred).ravel()
-        
+
         #print (f"tn = {tn}")
         #print (f"fp = {fp}")
         #print (f"fn = {fn}")
@@ -128,6 +126,7 @@ class MultiLayerPerceptron(nn.Module):
                 layers.update({"hidden4" : nn.Linear(config.neurons_hidden3, config.neurons_hidden4, dtype = torch.float64)})
                 layers.update({"tanh4" : nn.Tanh()})
 
+
             case "softsign":
                 layers.update({"softs1" : nn.Softsign()})
                 layers.update({"hidden2" : nn.Linear(config.neurons_hidden1, config.neurons_hidden2, dtype = torch.float64)})
@@ -143,16 +142,16 @@ class MultiLayerPerceptron(nn.Module):
 
                 layers.update({"relu1" : nn.ReLU()})
                 layers.update({"hidden2" : nn.Linear(config.neurons_hidden1, config.neurons_hidden2, dtype = torch.float64)})
-                layers.update({"relu2" : nn.ReLU()})
+                layers.update({"softs2" : nn.Softsign()})
                 layers.update({"hidden3" : nn.Linear(config.neurons_hidden2, config.neurons_hidden3, dtype = torch.float64)})
                 layers.update({"relu3" : nn.ReLU()})
                 layers.update({"hidden4" : nn.Linear(config.neurons_hidden3, config.neurons_hidden4, dtype = torch.float64)})
                 layers.update({"relu4" : nn.ReLU()})
 
-        # Output 
+        # output lazers
         layers.update({"output" : nn.Linear(config.neurons_hidden4, 1, dtype = torch.float64)})
         layers.update({"sig_OUT" : nn.Sigmoid()})
-
+        
         self.network = nn.Sequential(layers)
         self.init_weights()
         
@@ -207,6 +206,10 @@ class Trainer:
         self.train_data = DataLoader(train_data, batch_size=self.cfg.batch_size, shuffle=True)
         self.test_data = DataLoader(test_data, batch_size=self.cfg.batch_size, shuffle=True)
 
+        #print (str(test_data))
+        #print (type(test_data))
+        #print (str(self.test_data.dataset))
+
     def train(self, logger = None):
         self.model.train()
         self.loss_train = []
@@ -226,6 +229,13 @@ class Trainer:
 
             self.loss_train.append(loss)
 
+        """
+        for layer in self.model.network.children():
+            if isinstance(layer, nn.Linear):
+                print(layer.state_dict()['weight'])
+                print(layer.state_dict()['bias'])
+        """
+
     def evaluate(self):
         y_pred = []
         y_true = []
@@ -239,11 +249,17 @@ class Trainer:
 
                 # Forward Pass
                 pred = self.model(x)
+
+                #print(f"Actual = {y}")
+                #print(f"values = {x}")
+                #print(f"Predition = {pred}")
+                #print("")
+
                 loss = self.loss_fn(pred, y)
 
                 # Save batch loss
                 self.loss_validate.append(loss)
-
+                
                 # Save predictions and expected values
                 y_pred.extend(pred)
                 y_true.extend(y)
