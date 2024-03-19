@@ -22,10 +22,10 @@ config = Namespace(
     normalized_weight_init = False,
     initial_bias = 0, 
     activation_fn = "sigmoid", # sigmoid | tanh | softsign | optimal
-    neurons_hidden1 = 30,
-    neurons_hidden2 = 30,
-    neurons_hidden3 = 30,
-    neurons_hidden4 = 30
+    neurons_hidden1 = 50,
+    neurons_hidden2 = 50,
+    neurons_hidden3 = 50,
+    neurons_hidden4 = 50
 )
 
 def config_to_dict(ns: Namespace):
@@ -101,7 +101,7 @@ class MultiLayerPerceptron(nn.Module):
     def __init__(self, input_size):
         super().__init__()
 
-        # create first hidden layer
+        # Create first hidden layer
         layers = OrderedDict([
             ("hidden1", nn.Linear(input_size, config.neurons_hidden1, dtype = torch.float64))
         ])
@@ -142,13 +142,13 @@ class MultiLayerPerceptron(nn.Module):
 
                 layers.update({"relu1" : nn.ReLU()})
                 layers.update({"hidden2" : nn.Linear(config.neurons_hidden1, config.neurons_hidden2, dtype = torch.float64)})
-                layers.update({"softs2" : nn.Softsign()})
+                layers.update({"relu2" : nn.ReLU()})
                 layers.update({"hidden3" : nn.Linear(config.neurons_hidden2, config.neurons_hidden3, dtype = torch.float64)})
                 layers.update({"relu3" : nn.ReLU()})
                 layers.update({"hidden4" : nn.Linear(config.neurons_hidden3, config.neurons_hidden4, dtype = torch.float64)})
                 layers.update({"relu4" : nn.ReLU()})
 
-        # output lazers
+        # output layer
         layers.update({"output" : nn.Linear(config.neurons_hidden4, 1, dtype = torch.float64)})
         layers.update({"sig_OUT" : nn.Sigmoid()})
         
