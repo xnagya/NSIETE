@@ -243,3 +243,5 @@
 /zadanie2/images_array.npy
 /zadanie2/inst_maps_replaced.npy
 /zadanie2/inst_maps_replaced_resized.npy
+/zadanie2/tensor_labels.pt
+/zadanie2/tensor_images.pt
