@@ -35,5 +35,3 @@ config_Unet = Namespace (
     pool_kernel_size = 2,               # affects h,w (pooling and transposed convolution)
     padding_convT = [1, 0, 0, 0]        # needed if h,w is not divisible by at i-layer (1 = not divisible)
 )
-
-a = 5
