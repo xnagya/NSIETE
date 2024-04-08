@@ -1,7 +1,5 @@
 from argparse import Namespace
 
-print("Network configuration loaded")
-
 def config_to_dict(ns: Namespace):
     return vars(ns)
 
@@ -19,8 +17,8 @@ config_Unet = Namespace (
     initial_bias = 0,
 
     # U-Net params
-    channels_out_init = 32,             # initial channel width (num of channels on 1-st layer)
-    channel_mul = float(2),             # multiplication of image channels per layer
+    channels_out_init = 32,             # initial channel width (num of output channels on 1-st layer)
+    channel_mul = float(2),             # multiplication of image channels per layer, idealy int number
     network_depth = 3,                  # number of network layers (without bridge)
     skip_features = "concat",           # none | concat | sdi    
 
