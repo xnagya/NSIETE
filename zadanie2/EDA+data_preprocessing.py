@@ -5,6 +5,7 @@ from scipy.ndimage import zoom
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+import torch
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from skimage import exposure
@@ -246,6 +247,7 @@ else:
 # Resize all_inst_maps_replaced to 500x500
 resized_inst_maps = [resize_inst_map(inst_map) for inst_map in all_inst_maps_replaced]
 
+# NORMALIZATION AND CONVERSION TO TENSORS
 # Convert list to numpy array
 resized_inst_maps = np.array(resized_inst_maps)
 
@@ -254,94 +256,51 @@ np.save('inst_maps_replaced_resized.npy', resized_inst_maps)
 print("Replaced instance maps saved to 'inst_maps_replaced_resized.npy'")
 print("Resized instance maps shape:", resized_inst_maps.shape)
 
-# Augmentation
+# Convert numpy to tensor
+npy_images = np.load('images_array.npy')
+tensor_images = torch.from_numpy(npy_images)
+npy_labels = np.load('inst_maps_replaced_resized.npy')
+tensor_labels = torch.from_numpy(npy_labels)
+
+print(tensor_images.shape, tensor_labels.shape)
+tensor_images = torch.transpose(tensor_images, 1, 3).transpose(2, 3)
+# tensor_labels = torch.transpose(tensor_labels, 1, 3).transpose(2, 3)
+# print(tensor_images.shape, tensor_labels.shape)
+
+torch.save(tensor_images, 'tensor_images.pt')
+torch.save(tensor_labels, 'tensor_labels.pt')
+print("Tensors reshaped and saved")
+
 # Load data from .npy files
 X = np.load('images_array.npy')  # Assuming X.npy contains your images
-y = np.load('inst_maps_replaced_resized.npy')  # Assuming y.npy contains your labels
+# y = np.load('inst_maps_replaced_resized.npy')  # Assuming y.npy contains your labels
+# X = torch.load('tensor_images.pt')
+y = torch.load('tensor_labels.pt')
 
-# Split the dataset into train, validation, and test sets
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.25, random_state=42)  # 0.25 x 0.8 = 0.2
-
-# Define data augmentation parameters
-datagen = ImageDataGenerator(rotation_range=20,
-                             width_shift_range=0.1,
-                             height_shift_range=0.1,
-                             shear_range=0.2,
-                             zoom_range=0.2,
-                             horizontal_flip=True,
-                             vertical_flip=True)
-
-# Fit the augmentation parameters on the training data
-# datagen.fit(X_train)
-
-# Generate augmented images and labels
-augmented_images = []
-augmented_labels = []
-
-for X_batch, y_batch in datagen.flow(X_train, y_train, batch_size=len(X_train), shuffle=False):
-    augmented_images.append(X_batch)
-    augmented_labels.append(y_batch)
-    break
-
-# Convert augmented images and labels to numpy arrays
-augmented_images = np.array(augmented_images)
-augmented_labels = np.array(augmented_labels)
-
-# Reshape augmented images and labels to match the dimensions of X_train and y_train
-augmented_images = augmented_images.reshape(-1, augmented_images.shape[2], augmented_images.shape[3], augmented_images.shape[4])
-augmented_labels = augmented_labels.reshape(augmented_labels.shape[1], -1, augmented_labels.shape[2])
-
-# # Concatenate augmented images and labels with original training data
-# X_train = np.concatenate((X_train, augmented_images), axis=0)
-#
-# # Repeat y_train to match the number of augmented labels
-# num_repeats = augmented_labels.shape[0] // y_train.shape[0]
-# y_train = np.repeat(y_train, repeats=num_repeats, axis=0)
-#
-# # Concatenate augmented labels with original labels
-# y_train = np.concatenate((y_train, augmented_labels), axis=0)
-
-# Shuffle the training data
-shuffle_index = np.random.permutation(len(X_train))
-X_train = X_train[shuffle_index]
-y_train = y_train[shuffle_index]
-
-# Normalize the augmented images
-mean_pixel_value = np.mean(X_train)
-std_pixel_value = np.std(X_train)
-normalized_images = (X_train - mean_pixel_value) / std_pixel_value
-
-# Optionally, apply contrast enhancement (e.g., histogram equalization) to the normalized images
+# Apply contrast enhancement (e.g., histogram equalization) to the normalized images
 enhanced_images = []
-for image in normalized_images:
+for image in X:
     enhanced_channels = []
     for channel in range(image.shape[-1]):  # Iterate over each color channel
-        enhanced_channel = exposure.equalize_hist(image[:, :, channel])
+        enhanced_channel = exposure.equalize_hist(image[:, :, channel]).astype(np.float32)
         enhanced_channels.append(enhanced_channel)
     enhanced_image = np.stack(enhanced_channels, axis=-1)  # Stack the enhanced channels back together
     enhanced_images.append(enhanced_image)
-enhanced_images = np.array(enhanced_images)
+X_norm = np.array(enhanced_images, dtype=np.float32)
 
-# Concatenate original and enhanced images
-X_train_augmented = np.concatenate((X_train, enhanced_images), axis=0)
-# Update labels for enhanced images
-y_train_augmented = np.concatenate((y_train, y_train), axis=0)  # Assuming labels are in the same order as images
-# Shuffle the augmented dataset
-X_train_augmented, y_train_augmented = shuffle(X_train_augmented, y_train_augmented)
+X = torch.from_numpy(X_norm)
+X = torch.transpose(X, 1, 3).transpose(2, 3)
+torch.save(X, 'tensor_images.pt')
 
-X_train_augmented = X_train_augmented.astype(np.float32) / 255.0
-X_train = X_train.astype(np.float32) / 255.0
-
-# # Define the number of samples to visualize and number of samples per row
-# num_samples = 284
-# num_samples_per_row = 10  # Adjust this value as needed
-#
-# # Create an interactive plot using ipywidgets
-# interact(plot_images, idx=IntSlider(min=0, max=(len(X_train) - 1) // num_samples_per_row, step=1, value=0))
+# Split the dataset into train, validation, and test sets
+test_size = 30 / 238
+val_size = 30 / 208
+train_size = 1 - (test_size + val_size)
+X_train_val, X_test, y_train_val, y_test = train_test_split(X_norm, y, test_size=test_size, random_state=42)
+X_train, X_val, y_train, y_val = train_test_split(X_train_val, y_train_val, test_size=val_size, random_state=42)
 
 # Define the number of samples to visualize
-num_samples = 10
+num_samples = 5
 
 # Select random indices from the dataset
 indices = np.random.choice(len(X_train), num_samples, replace=False)
@@ -351,14 +310,32 @@ plt.figure(figsize=(15, 6))
 for i, idx in enumerate(indices):
     # Plot the original image
     plt.subplot(2, num_samples, i + 1)
-    # you can use X_train, or enhanced_images here below (enhanced images are normalized in colour)
-    plt.imshow(enhanced_images[idx])
+    # Transpose the numpy array to match the expected format for imshow
+    plt.imshow(np.load('images_array.npy')[idx])
     plt.title(f'Original Image {idx}')
     plt.axis('off')
 
     # Plot the corresponding label
     plt.subplot(2, num_samples, num_samples + i + 1)
-    plt.imshow(y_train[idx], cmap='viridis')
+    plt.imshow(y[idx], cmap='viridis')
+    plt.title(f'Label {idx}')
+    plt.axis('off')
+
+plt.tight_layout()
+plt.show()
+
+# Plot the normalized images and their corresponding labels
+plt.figure(figsize=(15, 6))
+for i, idx in enumerate(indices):
+    # Plot the normalized image
+    plt.subplot(2, num_samples, i + 1)
+    plt.imshow(X_norm[idx])
+    plt.title(f'Normalized Image {idx}')
+    plt.axis('off')
+
+    # Plot the corresponding label
+    plt.subplot(2, num_samples, num_samples + i + 1)
+    plt.imshow(y[idx], cmap='viridis')
     plt.title(f'Label {idx}')
     plt.axis('off')
 
