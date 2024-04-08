@@ -8,7 +8,7 @@ def dict_to_config(d: dict):
 
 config_Unet = Namespace (
     # Dataset parameters
-    batch_size = 64,
+    batch_size = 32,
 
     # Trainer params
     learning_rate = 0.001,
@@ -20,7 +20,7 @@ config_Unet = Namespace (
     channels_out_init = 32,             # initial channel width (num of output channels on 1-st layer)
     channel_mul = float(2),             # multiplication of image channels per layer, idealy int number
     network_depth = 3,                  # number of network layers (without bridge)
-    skip_features = "none",           # none | concat | sdi    
+    skip_features = "concat",           # none | concat | sdi    
 
     # ENC, DEC params
     # h,w should be consistent per layer (otherwise output has different h,w then input)
@@ -31,5 +31,5 @@ config_Unet = Namespace (
     dilation = 1,                       # affects h,w 
     pool_type = "max",                  # max | avg 
     pool_kernel_size = 2,               # affects h,w (pooling and transposed convolution)
-    padding_convT = [1, 0, 0]        # needed if h,w is not divisible by at i-layer (1 = not divisible)
+    padding_convT = [1, 0, 0]           # needed when h,w is not divisible by at i-layer (1 = not divisible)
 )
