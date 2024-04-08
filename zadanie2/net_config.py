@@ -1,5 +1,4 @@
 from argparse import Namespace
-import torch
 
 def config_to_dict(ns: Namespace):
     return vars(ns)
@@ -33,16 +32,4 @@ config_Unet = Namespace (
     pool_type = "max",                  # max | avg 
     pool_kernel_size = 2,               # affects h,w (pooling and transposed convolution)
     padding_convT = [1, 0, 0]        # needed if h,w is not divisible by at i-layer (1 = not divisible)
-)
-
-
-class_colors = torch.IntTensor([
-    [0, 0, 0]           #black
-    , [0, 191, 255]     #deep sky blue
-    , [220, 20, 60]     #crimson
-    , [34, 139, 34]     #forest green
-    , [238, 130, 238]   #violet
-    , [255, 255, 0]     #yellow
-    , [192, 192, 192]   #silver
-    ]
 )
