@@ -23,7 +23,7 @@ metric_name_Vloss = "val_loss"
 metric_name_acc = "accuracy"
 metric_name_iou = "iou"
 metric_name_dice = "dice"
-batch_size = 32
+batch_size = 16
 learning_rate = 0.001
 betas = (0.9, 0.999)
 weight_decay = 0.001
@@ -34,7 +34,7 @@ save_interval = 3
 
 # U-Net params
 config_Unet = Namespace (
-    channels_out_init = 32,             # initial channel width (num of output channels on 1-st layer)
+    channels_out_init = 16,             # initial channel width (num of output channels on 1-st layer)
     channel_mul = float(2),             # multiplication of image channels per layer, idealy int number
     network_depth = 3,                  # number of network layers (without bridge)
     skip_features = "concat",           # none | concat     
