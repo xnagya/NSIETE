@@ -1,3 +1,8 @@
+
+### File downloaded from github
+### Link - https://github.com/yaoppeng/U-Net_v2/blob/master/unet_v2/pvtv2.py
+### Contains Encoder definition and helpful nn.Model classes for UNetV2
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

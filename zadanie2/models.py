@@ -1,20 +1,32 @@
 # %% [markdown]
-# # Neural network models
+# # __Neural network models__
 
 # %%
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import math
 from torchvision import models
 from collections import OrderedDict
 from copy import deepcopy
 
+# %%
 from pvtv2 import *
-import torch.nn.functional as F
 
 # %% [markdown]
 # ## U-Net Network
-# num_classes = Number of classes expecteed from output
+# 
+# Consists of:
+# - Encoder Block
+# - Bridge layer (conv2D)
+# - Decoder Block
+# - Output Layer (conv2D with channel = numer of classes)
+# 
+# Arguments:
+# - channels_in = Number of input image channels (usually 3 - RGB)
+# - Bridge layer (conv2D)
+# - Decoder Block
+# - Output Layer (conv2D with channel = numer of classes)
 
 # %%
 def conv2d_layer(channels_in, channels_out, kernel_size, padding, stride, dilation):

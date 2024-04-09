@@ -1,3 +1,8 @@
+# %% [markdown]
+# # __WanDB Experiment__
+# This file connects _models.py_ and _trainer.py_ files and manages experiments created in wanDB. It also contains dataset reresentation as Dataset subclass (Lizard_dataset). Experiments are defined in file NN-z2 (main file).
+# 
+
 # %%
 import wandb
 import torch
@@ -9,9 +14,17 @@ import matplotlib.pyplot as plt
 import gc
 import os.path
 
+# %%
 import net_config as cfg
 from models import *
 from trainer import *
+
+# %% [markdown]
+# ## Dataset class
+# This class is parsed to DataLoader in trainer.py 
+# 
+# Images are loaded to tensors __(dtype = float32)__ from argument 'path_images' </br>
+# Labels are loaded to tensors __(dtype = int64)__ from argument 'path_labels'
 
 # %%
 class Lizard_dataset(Dataset):
@@ -55,8 +68,6 @@ class Lizard_dataset(Dataset):
     def __getitem__(self, idx):
         image = self.images[idx, :, :, :]
         label = self.labels[idx, :, :]
-        #image = torch.unsqueeze(image, dim= 0)
-        #label = torch.unsqueeze(label, dim= 0)
 
         return (image, label)
     
@@ -89,11 +100,22 @@ class Lizard_dataset(Dataset):
         plt.show(img)
         
 
+# %% [markdown]
+# ## wanDB run class
+# 
+# This class executes training epochs by calling trainer functions. It also logs metrics and decides when the model params are saved (locally).
+# This class contains: 
+# - Current wanDB run 
+# - Trainer
+# - Save interval (every n-th epoch)
+# 
+
 # %%
 class wanDB_run: 
     def __init__(self, run_name, run_id, model: nn.Module, save_interval = None):
         wandb.login()
-        assert wandb.run is None, "wanDB has another run currently active"
+        
+        wandb.finish()
         
         self.run = wandb.init(
         entity = cfg.project_entity, 

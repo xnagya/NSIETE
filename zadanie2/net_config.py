@@ -1,3 +1,5 @@
+### Configuration file for experiments, trainer and NN models
+
 from argparse import Namespace
 
 def config_to_dict(ns: Namespace):
@@ -21,7 +23,7 @@ metric_name_Vloss = "val_loss"
 metric_name_acc = "accuracy"
 metric_name_iou = "iou"
 metric_name_dice = "dice"
-batch_size = 64
+batch_size = 32
 learning_rate = 0.001
 betas = (0.9, 0.999)
 weight_decay = 0.001
@@ -35,7 +37,7 @@ config_Unet = Namespace (
     channels_out_init = 32,             # initial channel width (num of output channels on 1-st layer)
     channel_mul = float(2),             # multiplication of image channels per layer, idealy int number
     network_depth = 3,                  # number of network layers (without bridge)
-    skip_features = "concat",           # none | concat | sdi    
+    skip_features = "concat",           # none | concat     
 
     # ENC, DEC params
     # h,w should be consistent per layer (otherwise output has different h,w then input)
