@@ -10,10 +10,10 @@ num_of_classes = 7
 background_class = 0
 
 # Experiment parameters
-model_path = "UNet-v2.pt"
 project_entity = "matus13579"
 project_name = "NN-z2"
 data_dir = "./data_norm/"
+
 
 # Trainer parameters
 metric_name_Tloss = "train_loss"
@@ -21,11 +21,14 @@ metric_name_Vloss = "val_loss"
 metric_name_acc = "accuracy"
 metric_name_IoU = "IoU"
 metric_name_dice = "dice"
-batch_size = 32
+batch_size = 4
 learning_rate = 0.001
 betas = (0.9, 0.999)
 weight_decay = 0
 initial_bias = 0
+model_path = "UNet-v2.tar"
+save_interval = 3
+
 
 # U-Net params
 config_Unet = Namespace (
