@@ -160,7 +160,7 @@ class wanDB_run:
             tl = self.trainer.stats.metric_average(cfg.metric_name_Tloss)
             vl = self.trainer.stats.metric_average(cfg.metric_name_Vloss)
             acc = self.trainer.stats.metric_average(cfg.metric_name_acc)
-            iou = self.trainer.stats.metric_average(cfg.metric_name_IoU)
+            iou = self.trainer.stats.metric_average(cfg.metric_name_iou)
             dice = self.trainer.stats.metric_average(cfg.metric_name_dice)
 
             # Save metrics to wandb

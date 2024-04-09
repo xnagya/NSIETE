@@ -9,6 +9,7 @@ from torch.utils.data import DataLoader
 from torchmetrics.classification import Dice, MulticlassAccuracy, MulticlassJaccardIndex
 import time
 
+# %%
 import net_config as cfg
 
 # %%
