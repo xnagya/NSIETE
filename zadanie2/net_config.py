@@ -19,6 +19,7 @@ data_dir = "./data_norm/"
 metric_name_Tloss = "train_loss"
 metric_name_Vloss = "val_loss"
 metric_name_acc = "accuracy"
+metric_name_iou = "iou"
 metric_name_dice = "dice"
 batch_size = 64
 learning_rate = 0.001

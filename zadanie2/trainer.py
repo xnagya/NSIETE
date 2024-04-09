@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from torchmetrics.classification import Dice, MulticlassAccuracy
+from torchmetrics.classification import Dice, MulticlassAccuracy, MulticlassJaccardIndex
 import time
 
 import net_config as cfg
@@ -60,7 +60,6 @@ def pixel_accuracy(prediction: torch.Tensor, truth: torch.Tensor):
 
     return accuracy
 
-
 # %%
 class Trainer:
     def __init__(self, model: nn.Module):
@@ -91,8 +90,9 @@ class Trainer:
         self.stats = Statistics()
 
         # Metrics
-        self.acc = MulticlassAccuracy(ignore_index=cfg.background_class, num_classes=cfg.num_of_classes, average='micro')
-        self.dice = Dice(ignore_index=cfg.background_class, num_classes=cfg.num_of_classes, average='micro')
+        self.acc = MulticlassAccuracy(ignore_index=cfg.background_class, num_classes=cfg.num_of_classes, average='macro')
+        self.dice = Dice(ignore_index=cfg.background_class, num_classes=cfg.num_of_classes, average='macro')
+        self.iou = MulticlassJaccardIndex(ignore_index=cfg.background_class, num_classes=cfg.num_of_classes, average='macro')
 
         # Saving and loading model
         self.best_model = None
@@ -188,9 +188,11 @@ class Trainer:
 
                 # Calculate metrics
                 a = self.acc(classes, y).item()
+                i = self.iou(classes, y).item()
                 d = self.dice(classes, y).item()
 
                 self.stats.update(cfg.metric_name_acc, a)
+                self.stats.update(cfg.metric_name_iou, i)
                 self.stats.update(cfg.metric_name_dice, d)
 
         end = time.time()
