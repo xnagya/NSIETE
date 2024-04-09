@@ -46,5 +46,8 @@ config_Unet = Namespace (
     dilation = 1,                       # affects h,w 
     pool_type = "max",                  # max | avg 
     pool_kernel_size = 2,               # affects h,w (pooling and transposed convolution)
-    padding_convT = [1, 0, 0]           # needed when h,w is not divisible by at i-layer (1 = not divisible)
+    padding_convT = [1, 0, 0],          # needed when h,w is not divisible by at i-layer (1 = not divisible)
+
+    channel_att_ratio = 16,
+    SDI_channels = 32
 )
