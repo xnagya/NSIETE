@@ -184,4 +184,20 @@ class wanDB_run:
         gc.collect()
 
 
+# %%
+"""
+d = cfg.config_to_dict(cfg.config_Unet)
+
+net = U_Net(3, cfg.num_of_classes, d)
+#output_shapes(net, 500, 500)
+
+t = torch.rand(14, 3, 500, 500)
+print(t.shape)
+t = net(t)
+print(t.shape)
+
+classes = torch.argmax(t, dim = 1)
+print(classes.shape)
+"""
+
 

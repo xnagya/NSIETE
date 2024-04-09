@@ -1,5 +1,6 @@
 # %% [markdown]
-# 
+# # __Model trainer__
+# This file contains Trainer and Statistics classes used during training of NN models. All metrics are calculated using library _torchmetrics_. 
 
 # %%
 import torch
@@ -186,9 +187,6 @@ class Trainer:
                 pred = self.network(x)
                 classes = torch.argmax(pred, dim = 1)
 
-                print(classes.shape)
-                print(torch.unique(classes))
-
                 # Calculate metrics
                 a = self.acc(classes, y).item()
                 i = self.iou(classes, y).item()
@@ -204,7 +202,7 @@ class Trainer:
         # Get best model
         if (self.best_accuracy is None) or (self.best_accuracy < a):
             self.best_accuracy = a
-            self.best_model = self.network()
+            self.best_model = self.network
 
 
 

@@ -23,11 +23,10 @@ metric_name_Vloss = "val_loss"
 metric_name_acc = "accuracy"
 metric_name_iou = "iou"
 metric_name_dice = "dice"
-batch_size = 16
+batch_size = 32
 learning_rate = 0.001
 betas = (0.9, 0.999)
 weight_decay = 0.001
-initial_bias = 0
 model_path = "UNet-v2.tar"
 save_interval = 3
 
@@ -47,8 +46,8 @@ config_Unet = Namespace (
     stride = 1,                         # affects h,w 
     dilation = 1,                       # affects h,w 
     pool_type = "max",                  # max | avg 
-    pool_kernel_size = 2,               # affects h,w (pooling and transposed convolution)
-    padding_convT = [1, 0, 0],          # needed when h,w is not divisible by at i-layer (1 = not divisible)
+    pool_kernel_size = 3,               # affects h,w (pooling and transposed convolution)
+    padding_convT = [1, 1, 2],          # needed when h,w is not divisible by at i-layer (1 = not divisible)
 
     channel_att_ratio = 16,
     SDI_channels = 32
