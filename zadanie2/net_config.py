@@ -6,17 +6,29 @@ def config_to_dict(ns: Namespace):
 def dict_to_config(d: dict):
     return Namespace(**d)
 
+num_of_classes = 7
+background_class = 0
+
+# Experiment parameters
+model_path = "UNet-v2.pt"
+project_entity = "matus13579"
+project_name = "NN-z2"
+data_dir = "./data_norm/"
+
+# Trainer parameters
+metric_name_Tloss = "train_loss"
+metric_name_Vloss = "val_loss"
+metric_name_acc = "accuracy"
+metric_name_IoU = "IoU"
+metric_name_dice = "dice"
+batch_size = 32
+learning_rate = 0.001
+betas = (0.9, 0.999)
+weight_decay = 0
+initial_bias = 0
+
+# U-Net params
 config_Unet = Namespace (
-    # Dataset parameters
-    batch_size = 32,
-
-    # Trainer params
-    learning_rate = 0.001,
-    betas = (0.9, 0.999), 
-    weight_decay = 0, 
-    initial_bias = 0,
-
-    # U-Net params
     channels_out_init = 32,             # initial channel width (num of output channels on 1-st layer)
     channel_mul = float(2),             # multiplication of image channels per layer, idealy int number
     network_depth = 3,                  # number of network layers (without bridge)
