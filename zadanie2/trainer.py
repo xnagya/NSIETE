@@ -98,9 +98,9 @@ class Trainer:
         self.stats = Statistics()
 
         # Metrics
-        self.acc = MulticlassAccuracy(ignore_index=cfg.background_class, num_classes=cfg.num_of_classes, average='macro')
-        self.dice = Dice(ignore_index=cfg.background_class, num_classes=cfg.num_of_classes, average='macro')
-        self.iou = MulticlassJaccardIndex(ignore_index=cfg.background_class, num_classes=cfg.num_of_classes, average='macro')
+        self.acc = MulticlassAccuracy(ignore_index=cfg.background_class, num_classes=cfg.num_of_classes, average='macro').to(self.device)
+        self.dice = Dice(ignore_index=cfg.background_class, num_classes=cfg.num_of_classes, average='macro').to(self.device)
+        self.iou = MulticlassJaccardIndex(ignore_index=cfg.background_class, num_classes=cfg.num_of_classes, average='macro').to(self.device)
 
         # Saving and loading model
         self.best_model = None
@@ -187,13 +187,9 @@ class Trainer:
                 classes = torch.argmax(x, dim = 1)
 
                 # Calculate metrics
-                a = self.acc(classes, y).to(self.device)
-                i = self.iou(classes, y).to(self.device)
-                d = self.dice(classes, y).to(self.device)
-
-                a = a.item()
-                i = i.item()
-                d = d.item()
+                a = self.acc(classes, y).item()
+                i = self.iou(classes, y).item()
+                d = self.dice(classes, y).item()
 
                 self.stats.update(cfg.metric_name_acc, a)
                 self.stats.update(cfg.metric_name_iou, i)
