@@ -129,6 +129,7 @@ class wanDB_run:
         self.trainer = Trainer(model)
         self.save_interval = save_interval
         self.datasets_loaded = False
+        self.batch_count = 0
 
         # Load best model
         if (self.save_interval is not None) and os.path.isfile(cfg.model_path):
@@ -144,7 +145,7 @@ class wanDB_run:
         self.trainer.load_dataset(trainData, valData, testData)
         self.datasets_loaded = True
     
-    def execute_training(self, epoch_count):
+    def execute_training(self, epoch_count, log_batch = False):
         assert self.datasets_loaded, "Datasets are NOT loaded"
 
         for _ in range(epoch_count):
@@ -156,19 +157,35 @@ class wanDB_run:
             # Evaluate model
             self.trainer.evaluate_model()
 
-            # Get metrics
-            tl = self.trainer.stats.metric_average(cfg.metric_name_Tloss)
-            vl = self.trainer.stats.metric_average(cfg.metric_name_Vloss)
-            acc = self.trainer.stats.metric_average(cfg.metric_name_acc)
-            iou = self.trainer.stats.metric_average(cfg.metric_name_iou)
-            dice = self.trainer.stats.metric_average(cfg.metric_name_dice)
+            if log_batch:
+                for i in range(self.trainer.stats.batch_count()):
+                    self.batch_count += 1
+                    m = self.trainer.stats.batch_metrics(i)
 
-            # Save metrics to wandb
-            self.run.log({"loss_train": tl, "epoch": self.current_epoch})
-            self.run.log({"loss_val": vl, "epoch": self.current_epoch})
-            self.run.log({"accuracy": acc, "epoch": self.current_epoch})
-            self.run.log({"iou": iou, "epoch": self.current_epoch})
-            self.run.log({"dice": dice, "epoch": self.current_epoch})
+                    self.run.log({"loss_train": m.get(cfg.metric_name_Tloss), "batch": self.batch_count})
+                    self.run.log({"loss_val": m.get(cfg.metric_name_Vloss), "batch": self.batch_count})
+                    self.run.log({"accuracy": m.get(cfg.metric_name_acc), "batch": self.batch_count})
+                    self.run.log({"iou": m.get(cfg.metric_name_iou), "batch": self.batch_count})
+                    self.run.log({"dice": m.get(cfg.metric_name_dice), "batch": self.batch_count})
+
+            
+            else:
+                # Get metrics average
+                tl = self.trainer.stats.metric_average(cfg.metric_name_Tloss)
+                vl = self.trainer.stats.metric_average(cfg.metric_name_Vloss)
+                acc = self.trainer.stats.metric_average(cfg.metric_name_acc)
+                iou = self.trainer.stats.metric_average(cfg.metric_name_iou)
+                dice = self.trainer.stats.metric_average(cfg.metric_name_dice)
+
+                # Save metrics to wandb
+                self.run.log({"loss_train": tl, "epoch": self.current_epoch})
+                self.run.log({"loss_val": vl, "epoch": self.current_epoch})
+                self.run.log({"accuracy": acc, "epoch": self.current_epoch})
+                self.run.log({"iou": iou, "epoch": self.current_epoch})
+                self.run.log({"dice": dice, "epoch": self.current_epoch})
+
+            self.trainer.stats.clear()
+            gc.collect()
 
             # Save best model
             if (self.save_interval is not None) and (self.current_epoch % self.save_interval == 0):

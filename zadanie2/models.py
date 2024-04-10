@@ -85,20 +85,18 @@ class Encoder_Block(nn.Module):
         for layer in self.layers:
             x = layer(x)
 
-        # Pooling
-        pooled = self.pooling(x)
-        
-        return pooled
+        # Pooling    
+        x = self.pooling(x)
+
+        return x
     
     def forward_skip(self, x):
         # Convolution
         for layer in self.layers:
             x = layer(x)
 
-        # Pooling
-        pooled = self.pooling(x)
-
-        return (pooled, x)
+        # Pooling, convolution output
+        return (self.pooling(x), x)
 
 # %%
 class Decoder_Block(nn.Module):
@@ -257,6 +255,8 @@ class U_Net(nn.Module):
                 for dec in self.decoders:
                     enc_output = features.pop()
                     x = dec.forward_skip(x, enc_output)  
+
+                del features
 
         # Output as logits
         x = self.output_layer(x)

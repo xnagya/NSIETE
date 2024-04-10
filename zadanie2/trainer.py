@@ -35,6 +35,9 @@ class Statistics:
                 max = len(val)
 
         return max 
+    
+    def clear(self):
+        self.metrics = dict()
 
     # First batch is 0
     def batch_metrics(self, batch_num):
@@ -129,18 +132,6 @@ class Trainer:
 
         print(f"NN model loaded from path '{cfg.model_path}'")
         return checkpoint['epoch']
-    
-    # Forward Pass - create prediction and return its error (loss)
-    def forward_pass(self, input, ground_truth):
-        prediction = self.network(input)
-        loss = self.loss_fn(prediction, ground_truth)
-        return loss
-    
-    # Backward Pass - update parameters (weights, bias)
-    def backward_pass(self, loss_value):
-        self.optimizer.zero_grad()
-        loss_value.backward()
-        self.optimizer.step()
 
     def train_model(self):
         # Train model (dataset = train_data)
@@ -150,12 +141,17 @@ class Trainer:
         for x, y in self.train_data:
             x, y = x.to(self.device), y.to(self.device)
 
-            loss = self.forward_pass(x, y)
+            # Forward pass
+            x = self.network(x)
+            loss = self.loss_fn(x, y)
 
             # Save batch loss
             self.stats.update(cfg.metric_name_Tloss, loss)
 
-            self.backward_pass(loss)
+            # Backward pass
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
 
         end = time.time()
         print(f"Train time in sec = {end - start}")
@@ -168,7 +164,9 @@ class Trainer:
             for x, y in self.val_data:
                 x, y = x.to(self.device), y.to(self.device)
 
-                loss = self.forward_pass(x, y)
+                # Forward pass
+                x = self.network(x)
+                loss = self.loss_fn(x, y)
 
                 # Save batch loss
                 self.stats.update(cfg.metric_name_Vloss, loss)
@@ -185,8 +183,8 @@ class Trainer:
             for x, y in self.test_data:
                 x, y = x.to(self.device), y.to(self.device)
 
-                pred = self.network(x)
-                classes = torch.argmax(pred, dim = 1)
+                x = self.network(x)
+                classes = torch.argmax(x, dim = 1)
 
                 # Calculate metrics
                 a = self.acc(classes, y).item()
