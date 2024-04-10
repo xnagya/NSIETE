@@ -24,7 +24,7 @@ metric_name_acc = "accuracy"
 metric_name_iou = "iou"
 metric_name_dice = "dice"
 batch_size = 16
-learning_rate = 0.01
+learning_rate = 0.001
 betas = (0.9, 0.999)
 weight_decay = 0.0001
 model_path = "UNet-v2.tar"
@@ -40,7 +40,7 @@ config_Unet = Namespace (
 
     # ENC, DEC params
     # h,w should be consistent per layer (otherwise output has different h,w then input)
-    block_width = 2,            
+    block_width = 3,            
     kernel_size = 5,                    # affects h,w 
     padding = 2,                        # affects h,w 
     stride = 1,                         # affects h,w 
