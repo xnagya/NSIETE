@@ -203,5 +203,3 @@ class Trainer:
             self.best_accuracy = a
             self.best_model = self.network
 
-
-
