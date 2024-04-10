@@ -187,9 +187,13 @@ class Trainer:
                 classes = torch.argmax(x, dim = 1)
 
                 # Calculate metrics
-                a = self.acc(classes, y).item()
-                i = self.iou(classes, y).item()
-                d = self.dice(classes, y).item()
+                a = self.acc(classes, y).to(self.device)
+                i = self.iou(classes, y).to(self.device)
+                d = self.dice(classes, y).to(self.device)
+
+                a = a.item()
+                i = i.item()
+                d = d.item()
 
                 self.stats.update(cfg.metric_name_acc, a)
                 self.stats.update(cfg.metric_name_iou, i)
