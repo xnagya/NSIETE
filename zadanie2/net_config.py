@@ -24,9 +24,9 @@ metric_name_acc = "accuracy"
 metric_name_iou = "iou"
 metric_name_dice = "dice"
 batch_size = 16
-learning_rate = 0.001
+learning_rate = 0.01
 betas = (0.9, 0.999)
-weight_decay = 0.001
+weight_decay = 0.0001
 model_path = "UNet-v2.tar"
 save_interval = 3
 
