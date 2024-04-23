@@ -1,0 +1,3 @@
+timm==0.9.16
+torchmetrics==1.3.2
+wandb==0.16.4

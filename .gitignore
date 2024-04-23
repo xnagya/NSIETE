@@ -9,3 +9,6 @@
 /zadanie2/tensor_labels.pt
 /zadanie2/tensor_images.pt
 /zadanie2/__pycache__
+/zadanie2/wandb/
+/zadanie2/data_norm/
+/zadanie2/data_original/
