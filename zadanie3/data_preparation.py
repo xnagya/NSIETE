@@ -1,7 +1,15 @@
+import sys
+
+print(sys.executable)
+
 import pandas as pd
 import numpy as np
 import random
 import os
+import re
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
@@ -42,7 +50,31 @@ class CustomTokenizer:
 
 # Step 1: Load and clean the dataset
 def clean_text(text):
-    return text
+    text = text.lower()
+
+    # Remove special characters
+    text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+
+    # Remove numbers
+    text = re.sub(r'\d+', '', text)
+
+    # Remove punctuation
+    text = re.sub(r'[^\w\s]', '', text)
+
+    # Tokenize text
+    tokens = word_tokenize(text)
+
+    # Remove stopwords
+    stop_words = set(stopwords.words('english'))
+    tokens = [word for word in tokens if word not in stop_words]
+
+    # Lemmatize tokens
+    lemmatizer = WordNetLemmatizer()
+    tokens = [lemmatizer.lemmatize(word) for word in tokens]
+
+    # Join tokens back into text
+    cleaned_text = ' '.join(tokens)
+    return cleaned_text
 
 
 # Load your dataset into a pandas DataFrame
