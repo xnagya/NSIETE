@@ -1,14 +1,14 @@
 # import nltk
 # nltk.download('stopwords')
 # nltk.download('wordnet')
-import json
 
 import pandas as pd
 import numpy as np
 import random
 import os
 import re
-import csv
+
+import torch
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
@@ -81,7 +81,7 @@ def create_missing_word_examples(text, tokenizer, min_missing_words=1, max_missi
     num_missing_words = random.randint(min_missing_words, min(max_missing_words, len(words)))
     missing_word_indices = random.sample(range(len(words)), num_missing_words)
     missing_word_examples = []
-    words_with_marks = words.copy()  # Create a copy of the original words list to modify
+    words_with_marks = words.copy()
     position_index_pairs = []
     for index in missing_word_indices:
         # Createing missing word example texts
@@ -114,20 +114,7 @@ position_index_pairs_array = np.array(position_index_pairs_all, dtype=object)
 np.save(file_path2, position_index_pairs_array)
 print("Position-index pairs saved to NumPy array:", file_path2)
 
-# if not os.path.exists(file_path2):
-#     # Save the NumPy array to a file
-#     np.save(file_path2, position_index_pairs_array)
-#     print("Position-index pairs saved to NumPy array:", file_path2)
-# else:
-#     print("Position-index pairs NumPy array file already exists:", file_path2)
-#     position_index_pairs_all = np.load(file_path2, allow_pickle=True)
 
-# print(len(training_examples), len(position_index_pairs_all))
-# position_index_pairs = np.load('position_index_pairs.npy', allow_pickle=True)
-# for sublist in position_index_pairs:
-#     print(sublist)
-
-#
 def text_to_tensor(text, tokenizer, position_index_pairs_all):
     # Tokenize the text
     tokens = tokenizer.texts_to_sequences([text])[0]
@@ -163,6 +150,8 @@ for essay, position_index_pair in zip(training_examples, position_index_pairs_al
     # Append the padded tensor representation to the list
     essays_tensor.append(padded_representation)
 
+# Save esseys as a number representation in a tensor
+torch.save(essays_tensor, 'essays_tensor.pt')
 
 # Convert the list to a numpy array
 essays_tensor = np.array(essays_tensor)
@@ -176,24 +165,6 @@ print("Maximum length of essays:", max_sequence_length)
 print("Tensor representation of the first essay:")
 print(essays_tensor[0])
 
-# import tensorflow as tf
-# essays_tensor_tf = tf.convert_to_tensor(essays_tensor)
-# tf.saved_model.save(essays_tensor_tf, 'essays_tensor_saved_model')
-
-
-# Vectorization
-# max_sequence_length = max(len(text.split()) for text, _ in training_examples)
-# X = []
-# Y = []
-# for text, missing_word_index in training_examples:
-#     encoded_text = tokenizer.texts_to_sequences([text])[0]
-#     padded_text = pad_sequences([encoded_text], maxlen=max_sequence_length, padding='post')[0]
-#     X.append(padded_text)
-#     Y.append([missing_word_index])
-#
-# X = np.array(X)
-# Y = np.array(Y)
-#
 # save_dir = 'dataset'
 # os.makedirs(save_dir, exist_ok=True)
 #
