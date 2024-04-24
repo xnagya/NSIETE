@@ -17,41 +17,7 @@ from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 
-# Custom Tokenizer
-# class CustomTokenizer:
-#     def __init__(self):
-#         self.word_index = {}
-#         self.index_word = {}
-#         self.vocab_size = 0
-#
-#     def fit_on_texts(self, texts):
-#         for text in texts:
-#             self._update_vocab(text)
-#
-#     def _update_vocab(self, text):
-#         words = text.split()
-#         for word in words:
-#             if word not in self.word_index:
-#                 self.word_index[word] = self.vocab_size
-#                 self.index_word[self.vocab_size] = word
-#                 self.vocab_size += 1
-#
-#     def texts_to_sequences(self, texts):
-#         sequences = []
-#         for text in texts:
-#             sequence = [self.word_index.get(word, 0) for word in text.split()]
-#             sequences.append(sequence)
-#         return sequences
-#
-#     def sequences_to_texts(self, sequences):
-#         texts = []
-#         for sequence in sequences:
-#             text = ' '.join([self.index_word.get(idx, '') for idx in sequence])
-#             texts.append(text)
-#         return texts
-
-
-# Step 1: Load and clean the dataset
+# Load and clean the dataset
 def clean_text(text_to_clean):
     text_to_clean = text_to_clean.lower()
 
@@ -84,9 +50,9 @@ df = pd.read_csv('./datasets/Training_Essay_Data.csv')
 
 # Clean the text column
 df['clean_text'] = df['text'].apply(clean_text)
-df.drop(columns=['generated'], inplace=True)
+df = df[df['clean_text'].str.split().apply(len) > 0]
 
-# Step 2: Tokenization
+# Tokenization
 tokenizer = Tokenizer()
 tokenizer.fit_on_texts(df['clean_text'])
 vocab_size = len(tokenizer.word_index) + 1
@@ -105,23 +71,6 @@ if not os.path.exists(file_path):
     print("Vocabulary saved")
 else:
     tokenizer_vocab_df = pd.read_csv(file_path)
-
-# Compute word counts
-# word_counts = {}
-# total_words = 0
-# for text in df['clean_text']:
-#     for word in text.split():
-#         word_counts[word] = word_counts.get(word, 0) + 1
-#         total_words += 1
-#
-# # Print the vocabulary with word frequencies
-# for word, index in tokenizer.word_index.items():
-#     frequency = word_counts.get(word, 0)
-#     print(f'Word: {word}, Index: {index}, Frequency: {frequency}')
-#
-# # Print the total number of words
-# print(f'Total number of words: {total_words}')
-
 
 # Handling Missing Words
 position_index_pairs_all = []
@@ -160,54 +109,78 @@ for text in df['clean_text']:
     training_examples.extend(examples)
 
 # Convert position_index_pairs to a NumPy array
-position_index_pairs_array = np.array(position_index_pairs_all, dtype=object)
-
 file_path2 = 'position_index_pairs.npy'
-if not os.path.exists(file_path2):
-    # Save the NumPy array to a file
-    np.save(file_path2, position_index_pairs_array)
-    print("Position-index pairs saved to NumPy array:", file_path2)
-else:
-    print("Position-index pairs NumPy array file already exists:", file_path2)
-    position_index_pairs = np.load(file_path2, allow_pickle=True)
+position_index_pairs_array = np.array(position_index_pairs_all, dtype=object)
+np.save(file_path2, position_index_pairs_array)
+print("Position-index pairs saved to NumPy array:", file_path2)
+
+# if not os.path.exists(file_path2):
+#     # Save the NumPy array to a file
+#     np.save(file_path2, position_index_pairs_array)
+#     print("Position-index pairs saved to NumPy array:", file_path2)
+# else:
+#     print("Position-index pairs NumPy array file already exists:", file_path2)
+#     position_index_pairs_all = np.load(file_path2, allow_pickle=True)
 
 # print(len(training_examples), len(position_index_pairs_all))
 # position_index_pairs = np.load('position_index_pairs.npy', allow_pickle=True)
 # for sublist in position_index_pairs:
 #     print(sublist)
 
-# print("asd")
 #
-# def text_to_tensor(text, tokenizer):
-#     # Tokenize the text
-#     tokens = tokenizer.texts_to_sequences([text])[0]
-#     tensor_representation = []
-#
-#     # Iterate through the tokens
-#     for i, token in enumerate(tokens):
-#         # Check if the token represents the missing word
-#         if token in missing_word_index:
-#             tensor_representation.append(-1)  # Mark the missing word with -1
-#         else:
-#             tensor_representation.append(token)  # Append the token index
-#
-#     return tensor_representation
-#
-# essays_tensor = []
-#
-# # Iterate through each essay
-# for essay in df['clean_text']:
-#     # Convert the essay to tensor representation
-#     tensor_representation = text_to_tensor(essay, tokenizer)
-#     # Append the tensor representation to the list
-#     essays_tensor.append(tensor_representation)
-#
-# # Convert the list to a numpy array
-# essays_tensor = np.array(essays_tensor)
-#
-# # Print the tensor representation of the first essay
-# print("Tensor representation of the first essay:")
-# print(essays_tensor[0])
+def text_to_tensor(text, tokenizer, position_index_pairs_all):
+    # Tokenize the text
+    tokens = tokenizer.texts_to_sequences([text])[0]
+    tensor_representation = []
+
+    # Iterate through the tokens
+    for i, token in enumerate(tokens):
+        # Check if the current token is the index of a missing word
+        if (i, token) in position_index_pairs_all:
+            tensor_representation.append(-1)  # Mark the missing word with -1
+        else:
+            tensor_representation.append(token)  # Append the token index
+
+    return tensor_representation
+
+
+# Calculate average and minimum length of essays
+essay_lengths = [len(text.split()) for text in df['clean_text']]
+average_length = sum(essay_lengths) / len(essay_lengths)
+min_length = min(essay_lengths)
+
+# Vectorization
+max_sequence_length = max(essay_lengths)
+
+essays_tensor = []
+
+# Iterate through each essay
+for essay, position_index_pair in zip(training_examples, position_index_pairs_all):
+    # Convert the essay to tensor representation
+    tensor_representation = text_to_tensor(essay, tokenizer, position_index_pair)
+    # Pad the tensor representation based on the length statistics
+    padded_representation = pad_sequences([tensor_representation], maxlen=max_sequence_length, padding='post')[0]
+    # Append the padded tensor representation to the list
+    essays_tensor.append(padded_representation)
+
+
+# Convert the list to a numpy array
+essays_tensor = np.array(essays_tensor)
+
+# Print statistics
+print("Average length of essays:", average_length)
+print("Minimum length of essays:", min_length)
+print("Maximum length of essays:", max_sequence_length)
+
+# Print the tensor representation of the first essay
+print("Tensor representation of the first essay:")
+print(essays_tensor[0])
+
+# import tensorflow as tf
+# essays_tensor_tf = tf.convert_to_tensor(essays_tensor)
+# tf.saved_model.save(essays_tensor_tf, 'essays_tensor_saved_model')
+
+
 # Vectorization
 # max_sequence_length = max(len(text.split()) for text, _ in training_examples)
 # X = []
