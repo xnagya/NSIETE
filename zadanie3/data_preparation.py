@@ -1,11 +1,14 @@
 # import nltk
 # nltk.download('stopwords')
 # nltk.download('wordnet')
+import json
+
 import pandas as pd
 import numpy as np
 import random
 import os
 import re
+import csv
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
@@ -121,29 +124,90 @@ else:
 
 
 # Handling Missing Words
-def create_missing_word_examples(text, tokenizer, min_missing_words=0, max_missing_words=4):
+position_index_pairs_all = []
+def create_missing_word_examples(text, tokenizer, min_missing_words=1, max_missing_words=4):
     words = text.split()
+    if len(words) == 0:
+        return 0
     num_missing_words = random.randint(min_missing_words, min(max_missing_words, len(words)))
     missing_word_indices = random.sample(range(len(words)), num_missing_words)
     missing_word_examples = []
     words_with_marks = words.copy()  # Create a copy of the original words list to modify
+    position_index_pairs = []
     for index in missing_word_indices:
+        # Createing missing word example texts
         missing_word = words[index]
-        words_with_marks[index] = '*' + missing_word + '*'  # Mark the missing word with asterisks
+        words_with_marks[index] = '*' + missing_word + '*'
+        # position missing word pairs
+        position = index
+        index_in_vocab = tokenizer.word_index.get(missing_word, 0)
+        position_index_pairs.append((position, index_in_vocab))
+    position_index_pairs_all.append(position_index_pairs)
     input_text = ' '.join(words_with_marks)  # Join the words with marks back into a string
     output_word_indices = [tokenizer.word_index.get(words[index], 0) for index in missing_word_indices]
-    missing_word_examples.append((input_text, output_word_indices))
+    # print(missing_word_indices, output_word_indices)
+    # missing_word_examples.append((input_text, output_word_indices))
+    missing_word_examples.append(input_text)
     return missing_word_examples
-
 
 
 # Creating Training Examples
 training_examples = []
 for text in df['clean_text']:
     examples = create_missing_word_examples(text, tokenizer)
+    if examples == 0:
+        continue
     training_examples.extend(examples)
 
-print("asd")
+# Convert position_index_pairs to a NumPy array
+position_index_pairs_array = np.array(position_index_pairs_all, dtype=object)
+
+file_path2 = 'position_index_pairs.npy'
+if not os.path.exists(file_path2):
+    # Save the NumPy array to a file
+    np.save(file_path2, position_index_pairs_array)
+    print("Position-index pairs saved to NumPy array:", file_path2)
+else:
+    print("Position-index pairs NumPy array file already exists:", file_path2)
+    position_index_pairs = np.load(file_path2, allow_pickle=True)
+
+# print(len(training_examples), len(position_index_pairs_all))
+# position_index_pairs = np.load('position_index_pairs.npy', allow_pickle=True)
+# for sublist in position_index_pairs:
+#     print(sublist)
+
+# print("asd")
+#
+# def text_to_tensor(text, tokenizer):
+#     # Tokenize the text
+#     tokens = tokenizer.texts_to_sequences([text])[0]
+#     tensor_representation = []
+#
+#     # Iterate through the tokens
+#     for i, token in enumerate(tokens):
+#         # Check if the token represents the missing word
+#         if token in missing_word_index:
+#             tensor_representation.append(-1)  # Mark the missing word with -1
+#         else:
+#             tensor_representation.append(token)  # Append the token index
+#
+#     return tensor_representation
+#
+# essays_tensor = []
+#
+# # Iterate through each essay
+# for essay in df['clean_text']:
+#     # Convert the essay to tensor representation
+#     tensor_representation = text_to_tensor(essay, tokenizer)
+#     # Append the tensor representation to the list
+#     essays_tensor.append(tensor_representation)
+#
+# # Convert the list to a numpy array
+# essays_tensor = np.array(essays_tensor)
+#
+# # Print the tensor representation of the first essay
+# print("Tensor representation of the first essay:")
+# print(essays_tensor[0])
 # Vectorization
 # max_sequence_length = max(len(text.split()) for text, _ in training_examples)
 # X = []
