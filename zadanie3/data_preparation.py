@@ -7,28 +7,30 @@ import numpy as np
 import random
 import os
 import re
-
 import torch
-from nltk.corpus import stopwords
+import nltk
+from nltk.corpus import stopwords, wordnet
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
+# nltk.download('stopwords')
+# nltk.download('punkt')
+# nltk.download('wordnet')
+# nltk.download('averaged_perceptron_tagger')
 
-# Load and clean the dataset
+
+# Initialize WordNetLemmatizer
+lemmatizer = WordNetLemmatizer()
+
+# Function to perform lemmatization and remove stopwords
 def clean_text(text_to_clean):
     text_to_clean = text_to_clean.lower()
 
-    # Remove special characters
-    text_to_clean = re.sub(r'[^a-zA-Z0-9\s]', '', text_to_clean)
-
-    # Remove numbers
-    text_to_clean = re.sub(r'\d+', '', text_to_clean)
-
-    # Remove punctuation
-    text_to_clean = re.sub(r'[^\w\s]', '', text_to_clean)
+    # Remove special characters, numbers, and punctuation
+    text_to_clean = re.sub(r'[^a-zA-Z\s]', '', text_to_clean)
 
     # Tokenize text
     tokens = word_tokenize(text_to_clean)
@@ -37,14 +39,18 @@ def clean_text(text_to_clean):
     stop_words = set(stopwords.words('english'))
     tokens = [word for word in tokens if word not in stop_words]
 
-    # Lemmatize tokens
-    lemmatizer = WordNetLemmatizer()
-    tokens = [lemmatizer.lemmatize(word) for word in tokens]
+    # Lemmatize tokens using WordNet
+    tokens = [lemmatizer.lemmatize(word, get_wordnet_pos(word)) for word in tokens]
 
     # Join tokens
     cleaned_text = ' '.join(tokens)
-    return text_to_clean
+    return cleaned_text
 
+# Function to get WordNet POS tags
+def get_wordnet_pos(word):
+    tag = nltk.pos_tag([word])[0][1][0].upper()
+    tag_dict = {"J": wordnet.ADJ, "N": wordnet.NOUN, "V": wordnet.VERB, "R": wordnet.ADV}
+    return tag_dict.get(tag, wordnet.NOUN)
 
 df = pd.read_csv('./datasets/Training_Essay_Data.csv')
 
@@ -67,6 +73,7 @@ if not os.path.exists(file_path):
     tokenizer_vocab_df = pd.merge(word_index_df, word_counts_df, on='Word', how='left')
     tokenizer_vocab_df = tokenizer_vocab_df.sort_values(by='Frequency', ascending=False)
     tokenizer_vocab_df = tokenizer_vocab_df[['Word', 'Index', 'Frequency']]
+    tokenizer_vocab_df = tokenizer_vocab_df[tokenizer_vocab_df['Frequency'] >= 20]
     tokenizer_vocab_df.to_csv('tokenizer_vocab_with_frequency.csv', index=False)
     print("Vocabulary saved")
 else:
@@ -74,29 +81,50 @@ else:
 
 # Handling Missing Words
 position_index_pairs_all = []
+
+
 def create_missing_word_examples(text, tokenizer, min_missing_words=1, max_missing_words=4):
     words = text.split()
     if len(words) == 0:
         return 0
-    num_missing_words = random.randint(min_missing_words, min(max_missing_words, len(words)))
-    missing_word_indices = random.sample(range(len(words)), num_missing_words)
+
     missing_word_examples = []
     words_with_marks = words.copy()
     position_index_pairs = []
-    for index in missing_word_indices:
-        # Createing missing word example texts
-        missing_word = words[index]
-        words_with_marks[index] = '*' + missing_word + '*'
-        # position missing word pairs
-        position = index
-        index_in_vocab = tokenizer.word_index.get(missing_word, 0)
-        position_index_pairs.append((position, index_in_vocab))
+
+    while len(missing_word_examples) < min_missing_words:
+        num_missing_words = random.randint(min_missing_words, min(max_missing_words, len(words)))
+        missing_word_indices = random.sample(range(len(words)), num_missing_words)
+
+        for index in missing_word_indices:
+            # Choose a random word until it's in the vocabulary
+            try_choice = 0
+            while True:
+                missing_word = words[index]
+                index_in_vocab = tokenizer.word_index.get(missing_word, 0)
+                if try_choice == 4:
+                    break
+                if index_in_vocab != 0:
+                    break  # Word is in vocabulary, exit loop
+
+                # Choose another random word
+                missing_word = random.choice(list(tokenizer.word_index.keys()))
+                index_in_vocab = tokenizer.word_index.get(missing_word, 0)
+                words[index] = missing_word
+                try_choice += 1
+
+            # Creating missing word example texts
+            words_with_marks[index] = '*' + missing_word + '*'
+            # Position missing word pairs
+            position = index
+            position_index_pairs.append((position, index_in_vocab))
+
+        input_text = ' '.join(words_with_marks)  # Join the words with marks back into a string
+        output_word_indices = [tokenizer.word_index.get(words[index], 0) for index in missing_word_indices]
+        missing_word_examples.append(input_text)
+
     position_index_pairs_all.append(position_index_pairs)
-    input_text = ' '.join(words_with_marks)  # Join the words with marks back into a string
-    output_word_indices = [tokenizer.word_index.get(words[index], 0) for index in missing_word_indices]
-    # print(missing_word_indices, output_word_indices)
-    # missing_word_examples.append((input_text, output_word_indices))
-    missing_word_examples.append(input_text)
+
     return missing_word_examples
 
 
