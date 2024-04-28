@@ -38,7 +38,7 @@ def text_to_tensor(text, tokenizer, position_index_pairs_all):
     return tensor_representation
 
 
-def create_missing_word_examples(text, tokenizer_vocab_df, min_missing_words=1, max_missing_words=10, max_essay_length=500):
+def create_missing_word_examples(text, tokenizer_vocab_df, min_missing_words=1, max_missing_words=1, max_essay_length=50):
     words = text.split()[:max_essay_length]
     if len(words) <= 2:
         return 0
@@ -169,7 +169,7 @@ average_length = sum(essay_lengths) / len(essay_lengths)
 min_length = min(essay_lengths)
 
 # Vectorization
-max_sequence_length = 500  # Set maximum sequence length to 500
+max_sequence_length = 50
 
 essays_tensor = []
 
@@ -206,8 +206,9 @@ print(essays_tensor[0])
 # Load essays tensor and position index pairs
 essays_tensor = torch.load('essays_tensor.pt')
 position_index_pairs_array = np.load('position_index_pairs.npy', allow_pickle=True)
+position_index_pairs_array = np.array(position_index_pairs_array)  # Convert to NumPy array
 essay_representation = [' '.join(map(str, essay)) for essay in essays_tensor]
-position_index_pairs = [pair.tolist() for pair in position_index_pairs_array]
+position_index_pairs = position_index_pairs_all
 
 # Create DataFrame
 data = {
@@ -222,7 +223,7 @@ output_folder = 'output'
 os.makedirs(output_folder, exist_ok=True)
 
 # Save the DataFrame to a CSV file in the output folder
-df.to_csv(os.path.join(output_folder, 'essays_with_positions.csv'), index=False)
+df.to_csv(os.path.join(output_folder, 'essays_with_positions_max50_1miss.csv'), index=False)
 
 
 # save_dir = 'dataset'
