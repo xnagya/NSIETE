@@ -25,7 +25,62 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 # Initialize WordNetLemmatizer
 lemmatizer = WordNetLemmatizer()
 
-# Function to perform lemmatization and remove stopwords
+
+def text_to_tensor(text, tokenizer, position_index_pairs_all):
+    # Tokenize the text
+    tokens = tokenizer.texts_to_sequences([text])[0]
+    tensor_representation = []
+
+    # Iterate through the tokens
+    for i, token in enumerate(tokens):
+        tensor_representation.append(token)
+
+    return tensor_representation
+
+
+def create_missing_word_examples(text, tokenizer_vocab_df, min_missing_words=1, max_missing_words=1, max_essay_length=500):
+    words = text.split()[:max_essay_length]  # Limit essay length to 500 words
+    if len(words) <= 2:
+        return 0
+
+    missing_word_examples = []
+    words_with_marks = words.copy()
+    position_index_pairs = []
+
+    while len(missing_word_examples) < min_missing_words:
+        num_missing_words = random.randint(min_missing_words, min(max_missing_words, len(words) - 2))  # Exclude first and last words
+        missing_word_indices = random.sample(range(1, len(words) - 1), num_missing_words)
+
+        for index in missing_word_indices:
+            # Choose a random word until it's in the vocabulary
+            try_choice = 0
+            while True:
+                missing_word = words[index]
+                index_in_vocab = tokenizer_vocab_df[tokenizer_vocab_df['Word'] == missing_word]['Index'].values
+                if len(index_in_vocab) > 0:
+                    break  # Word is in vocabulary, exit loop
+
+                # Choose another random word
+                missing_word = random.choice(list(tokenizer_vocab_df['Word']))
+                index_in_vocab = tokenizer_vocab_df[tokenizer_vocab_df['Word'] == missing_word]['Index'].values
+                words[index] = missing_word
+                try_choice += 1
+
+            # Creating missing word example texts
+            words_with_marks[index] = missing_word  # '*' + missing_word + '*'
+            # Position missing word pairs
+            position = index
+            position_index_pairs.append((position, index_in_vocab[0]))
+
+        input_text = ' '.join(words_with_marks)  # Join the words with marks back into a string
+        output_word_indices = [tokenizer_vocab_df[tokenizer_vocab_df['Word'] == words[index]]['Index'].values[0] for index in missing_word_indices]
+        missing_word_examples.append(input_text)
+
+    position_index_pairs_all.append(position_index_pairs)
+
+    return missing_word_examples
+
+
 def clean_text(text_to_clean):
     text_to_clean = text_to_clean.lower()
 
@@ -46,17 +101,25 @@ def clean_text(text_to_clean):
     cleaned_text = ' '.join(tokens)
     return cleaned_text
 
-# Function to get WordNet POS tags
+
 def get_wordnet_pos(word):
     tag = nltk.pos_tag([word])[0][1][0].upper()
     tag_dict = {"J": wordnet.ADJ, "N": wordnet.NOUN, "V": wordnet.VERB, "R": wordnet.ADV}
     return tag_dict.get(tag, wordnet.NOUN)
 
+
 df = pd.read_csv('./datasets/Training_Essay_Data.csv')
 
-# Clean the text column
-df['clean_text'] = df['text'].apply(clean_text)
-df = df[df['clean_text'].str.split().apply(len) > 0]
+# Check if the cleaned text CSV file exists
+cleaned_text_file = 'cleaned_text.csv'
+if not os.path.exists(cleaned_text_file):
+    df['clean_text'] = df['text'].apply(clean_text)
+    df = df[df['clean_text'].str.split().apply(len) > 0]
+    df.to_csv(cleaned_text_file, index=False)
+    print("Cleaned text saved to:", cleaned_text_file)
+else:
+    df = pd.read_csv(cleaned_text_file)
+    print("Cleaned text loaded from:", cleaned_text_file)
 
 # Tokenization
 tokenizer = Tokenizer()
@@ -78,63 +141,21 @@ if not os.path.exists(file_path):
     print("Vocabulary saved")
 else:
     tokenizer_vocab_df = pd.read_csv(file_path)
+    print("Vocabulary loaded")
 
 # Handling Missing Words
 position_index_pairs_all = []
 
-
-def create_missing_word_examples(text, tokenizer, min_missing_words=1, max_missing_words=4):
-    words = text.split()
-    if len(words) == 0:
-        return 0
-
-    missing_word_examples = []
-    words_with_marks = words.copy()
-    position_index_pairs = []
-
-    while len(missing_word_examples) < min_missing_words:
-        num_missing_words = random.randint(min_missing_words, min(max_missing_words, len(words)))
-        missing_word_indices = random.sample(range(len(words)), num_missing_words)
-
-        for index in missing_word_indices:
-            # Choose a random word until it's in the vocabulary
-            try_choice = 0
-            while True:
-                missing_word = words[index]
-                index_in_vocab = tokenizer.word_index.get(missing_word, 0)
-                if try_choice == 4:
-                    break
-                if index_in_vocab != 0:
-                    break  # Word is in vocabulary, exit loop
-
-                # Choose another random word
-                missing_word = random.choice(list(tokenizer.word_index.keys()))
-                index_in_vocab = tokenizer.word_index.get(missing_word, 0)
-                words[index] = missing_word
-                try_choice += 1
-
-            # Creating missing word example texts
-            words_with_marks[index] = '*' + missing_word + '*'
-            # Position missing word pairs
-            position = index
-            position_index_pairs.append((position, index_in_vocab))
-
-        input_text = ' '.join(words_with_marks)  # Join the words with marks back into a string
-        output_word_indices = [tokenizer.word_index.get(words[index], 0) for index in missing_word_indices]
-        missing_word_examples.append(input_text)
-
-    position_index_pairs_all.append(position_index_pairs)
-
-    return missing_word_examples
-
-
 # Creating Training Examples
 training_examples = []
+k = 0
 for text in df['clean_text']:
-    examples = create_missing_word_examples(text, tokenizer)
+    examples = create_missing_word_examples(text, tokenizer_vocab_df)
     if examples == 0:
         continue
     training_examples.extend(examples)
+    # print(f"Example {k} created")
+    k += 1
 
 # Convert position_index_pairs to a NumPy array
 file_path2 = 'position_index_pairs.npy'
@@ -142,43 +163,31 @@ position_index_pairs_array = np.array(position_index_pairs_all, dtype=object)
 np.save(file_path2, position_index_pairs_array)
 print("Position-index pairs saved to NumPy array:", file_path2)
 
-
-def text_to_tensor(text, tokenizer, position_index_pairs_all):
-    # Tokenize the text
-    tokens = tokenizer.texts_to_sequences([text])[0]
-    tensor_representation = []
-
-    # Iterate through the tokens
-    for i, token in enumerate(tokens):
-        # Check if the current token is the index of a missing word
-        if (i, token) in position_index_pairs_all:
-            tensor_representation.append(-1)  # Mark the missing word with -1
-        else:
-            tensor_representation.append(token)  # Append the token index
-
-    return tensor_representation
-
-
 # Calculate average and minimum length of essays
 essay_lengths = [len(text.split()) for text in df['clean_text']]
 average_length = sum(essay_lengths) / len(essay_lengths)
 min_length = min(essay_lengths)
 
 # Vectorization
-max_sequence_length = max(essay_lengths)
+max_sequence_length = 500  # Set maximum sequence length to 500
 
 essays_tensor = []
 
 # Iterate through each essay
 for essay, position_index_pair in zip(training_examples, position_index_pairs_all):
-    # Convert the essay to tensor representation
-    tensor_representation = text_to_tensor(essay, tokenizer, position_index_pair)
-    # Pad the tensor representation based on the length statistics
-    padded_representation = pad_sequences([tensor_representation], maxlen=max_sequence_length, padding='post')[0]
-    # Append the padded tensor representation to the list
-    essays_tensor.append(padded_representation)
+    tokens = tokenizer.texts_to_sequences([essay])[0]
 
-# Save esseys as a number representation in a tensor
+    if len(tokens) > max_sequence_length:
+        tokens = tokens[:max_sequence_length]
+    else:
+        tokens += [0] * (max_sequence_length - len(tokens))
+
+    essays_tensor.append(tokens)
+
+# Convert the list to a numpy array
+essays_tensor = np.array(essays_tensor)
+
+# Save essays as a number representation in a tensor
 torch.save(essays_tensor, 'essays_tensor.pt')
 
 # Convert the list to a numpy array
@@ -192,6 +201,29 @@ print("Maximum length of essays:", max_sequence_length)
 # Print the tensor representation of the first essay
 print("Tensor representation of the first essay:")
 print(essays_tensor[0])
+
+
+# Load essays tensor and position index pairs
+essays_tensor = torch.load('essays_tensor.pt')
+position_index_pairs_array = np.load('position_index_pairs.npy', allow_pickle=True)
+essay_representation = [' '.join(map(str, essay)) for essay in essays_tensor]
+position_index_pairs = [pair.tolist() for pair in position_index_pairs_array]
+
+# Create DataFrame
+data = {
+    'EssayRepresentation': essay_representation,
+    'PositionIndexPairs': position_index_pairs
+}
+
+df = pd.DataFrame(data)
+
+# Create a directory for saving the output file
+output_folder = 'output'
+os.makedirs(output_folder, exist_ok=True)
+
+# Save the DataFrame to a CSV file in the output folder
+df.to_csv(os.path.join(output_folder, 'essays_with_positions.csv'), index=False)
+
 
 # save_dir = 'dataset'
 # os.makedirs(save_dir, exist_ok=True)
