@@ -1,7 +1,3 @@
-# import nltk
-# nltk.download('stopwords')
-# nltk.download('wordnet')
-
 import pandas as pd
 import numpy as np
 import random
@@ -66,7 +62,6 @@ def create_missing_word_examples(text, tokenizer_vocab_df, min_missing_words=1, 
                 words[index] = missing_word
                 try_choice += 1
 
-            # Creating missing word example texts
             words_with_marks[index] = missing_word  # '*' + missing_word + '*'
             # Position missing word pairs
             position = index
@@ -127,7 +122,7 @@ tokenizer.fit_on_texts(df['clean_text'])
 vocab_size = len(tokenizer.word_index) + 1
 
 # Save the vocabulary, if does not exist
-file_path = 'tokenizer_vocab_with_frequency.csv'
+file_path = 'tokenizer_vocab_with_frequency_embedding.csv'
 if not os.path.exists(file_path):
     word_index = tokenizer.word_index
     word_counts = tokenizer.word_counts
@@ -137,7 +132,38 @@ if not os.path.exists(file_path):
     tokenizer_vocab_df = tokenizer_vocab_df.sort_values(by='Frequency', ascending=False)
     tokenizer_vocab_df = tokenizer_vocab_df[['Word', 'Index', 'Frequency']]
     tokenizer_vocab_df = tokenizer_vocab_df[tokenizer_vocab_df['Frequency'] >= 20]
-    tokenizer_vocab_df.to_csv('tokenizer_vocab_with_frequency.csv', index=False)
+
+    # Load pre-trained GloVe embeddings
+    embeddings_index = {}
+    embedding_dim = 200
+    glove_file = 'glove.6B.200d.txt'
+
+    with open(glove_file, encoding='utf-8') as f:
+        for line in f:
+            values = line.split()
+            word = values[0]
+            coefs = np.asarray(values[1:], dtype='float32')
+            embeddings_index[word] = coefs
+
+    # "Unknown" token and initialization of embedding vector
+    unknown_token = '<UNK>'
+    embedding_matrix = np.zeros((vocab_size, embedding_dim))
+    unknown_vector = np.random.normal(size=(embedding_dim,))
+
+    # Update the vocabulary and embedding matrix based on GloVe embeddings
+    for index, row in tokenizer_vocab_df.iterrows():
+        word = row['Word']
+        i = row['Index']
+        if word in embeddings_index:
+            embedding_matrix[i] = embeddings_index[word]
+        else:
+            tokenizer_vocab_df.at[index, 'Word'] = unknown_token
+            embedding_matrix[i] = unknown_vector
+
+    # Remove duplicates and reset indices of the vocabulary DataFrame
+    tokenizer_vocab_df = tokenizer_vocab_df.drop_duplicates(subset='Word').reset_index(drop=True)
+
+    tokenizer_vocab_df.to_csv(file_path, index=False)
     print("Vocabulary saved")
 else:
     tokenizer_vocab_df = pd.read_csv(file_path)
@@ -154,7 +180,7 @@ for text in df['clean_text']:
     if examples == 0:
         continue
     training_examples.extend(examples)
-    # print(f"Example {k} created")
+    print(f"Example {k} created")
     k += 1
 
 # Convert position_index_pairs to a NumPy array
@@ -174,15 +200,29 @@ max_sequence_length = 50
 essays_tensor = []
 
 # Iterate through each essay
+k = 0
 for essay, position_index_pair in zip(training_examples, position_index_pairs_all):
-    tokens = tokenizer.texts_to_sequences([essay])[0]
+    tokens = essay.split()
+    token_indices = []
 
-    if len(tokens) > max_sequence_length:
-        tokens = tokens[:max_sequence_length]
+    # Convert each token to its corresponding index in the vocabulary
+    for token in tokens:
+        index = tokenizer_vocab_df[tokenizer_vocab_df['Word'] == token]['Index'].values
+        if len(index) > 0:
+            token_indices.append(index[0])
+        else:
+            # If the token is not in the vocabulary -> unknown token
+            token_indices.append(tokenizer_vocab_df[tokenizer_vocab_df['Word'] == '<UNK>']['Index'].values[0])
+
+    # Pad the sequence to the maximum length
+    if len(token_indices) > max_sequence_length:
+        token_indices = token_indices[:max_sequence_length]
     else:
-        tokens += [0] * (max_sequence_length - len(tokens))
+        token_indices += [0] * (max_sequence_length - len(token_indices))
 
-    essays_tensor.append(tokens)
+    essays_tensor.append(token_indices)
+    print(f"token indices {k} appended")
+    k += 1
 
 # Convert the list to a numpy array
 essays_tensor = np.array(essays_tensor)
@@ -210,7 +250,6 @@ position_index_pairs_array = np.array(position_index_pairs_array)  # Convert to 
 essay_representation = [' '.join(map(str, essay)) for essay in essays_tensor]
 position_index_pairs = position_index_pairs_all
 
-# Create DataFrame
 data = {
     'EssayRepresentation': essay_representation,
     'PositionIndexPairs': position_index_pairs
@@ -218,12 +257,10 @@ data = {
 
 df = pd.DataFrame(data)
 
-# Create a directory for saving the output file
+# Save the output
 output_folder = 'output'
 os.makedirs(output_folder, exist_ok=True)
-
-# Save the DataFrame to a CSV file in the output folder
-df.to_csv(os.path.join(output_folder, 'essays_with_positions_max50_1miss.csv'), index=False)
+df.to_csv(os.path.join(output_folder, 'essays_with_positions.csv'), index=False)
 
 
 # save_dir = 'dataset'
