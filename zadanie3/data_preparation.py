@@ -38,8 +38,8 @@ def text_to_tensor(text, tokenizer, position_index_pairs_all):
     return tensor_representation
 
 
-def create_missing_word_examples(text, tokenizer_vocab_df, min_missing_words=1, max_missing_words=1, max_essay_length=500):
-    words = text.split()[:max_essay_length]  # Limit essay length to 500 words
+def create_missing_word_examples(text, tokenizer_vocab_df, min_missing_words=1, max_missing_words=10, max_essay_length=500):
+    words = text.split()[:max_essay_length]
     if len(words) <= 2:
         return 0
 
@@ -48,7 +48,7 @@ def create_missing_word_examples(text, tokenizer_vocab_df, min_missing_words=1, 
     position_index_pairs = []
 
     while len(missing_word_examples) < min_missing_words:
-        num_missing_words = random.randint(min_missing_words, min(max_missing_words, len(words) - 2))  # Exclude first and last words
+        num_missing_words = random.randint(min_missing_words, min(max_missing_words, len(words) - 2))
         missing_word_indices = random.sample(range(1, len(words) - 1), num_missing_words)
 
         for index in missing_word_indices:
@@ -58,7 +58,7 @@ def create_missing_word_examples(text, tokenizer_vocab_df, min_missing_words=1, 
                 missing_word = words[index]
                 index_in_vocab = tokenizer_vocab_df[tokenizer_vocab_df['Word'] == missing_word]['Index'].values
                 if len(index_in_vocab) > 0:
-                    break  # Word is in vocabulary, exit loop
+                    break
 
                 # Choose another random word
                 missing_word = random.choice(list(tokenizer_vocab_df['Word']))
