@@ -52,6 +52,7 @@ def create_missing_word_examples(text, tokenizer_vocab_df, min_missing_words=1, 
             try_choice = 0
             while True:
                 missing_word = words[index]
+                missing_word = words[index]
                 index_in_vocab = tokenizer_vocab_df[tokenizer_vocab_df['Word'] == missing_word]['Index'].values
                 if len(index_in_vocab) > 0:
                     break
@@ -135,8 +136,8 @@ if not os.path.exists(file_path):
 
     # Load pre-trained GloVe embeddings
     embeddings_index = {}
-    embedding_dim = 200
-    glove_file = 'glove.6B.200d.txt'
+    embedding_dim = 50
+    glove_file = 'glove.6B.50d.txt'
 
     with open(glove_file, encoding='utf-8') as f:
         for line in f:
@@ -205,14 +206,17 @@ for essay, position_index_pair in zip(training_examples, position_index_pairs_al
     tokens = essay.split()
     token_indices = []
 
-    # Convert each token to its corresponding index in the vocabulary
-    for token in tokens:
-        index = tokenizer_vocab_df[tokenizer_vocab_df['Word'] == token]['Index'].values
-        if len(index) > 0:
-            token_indices.append(index[0])
+    # Convert each token to its corresponding index in the vocabulary or -1 if missing
+    for i, token in enumerate(tokens):
+        if any(position == i for position, _ in position_index_pair):
+            token_indices.append(-1)  # Missing word represented as -1
         else:
-            # If the token is not in the vocabulary -> unknown token
-            token_indices.append(tokenizer_vocab_df[tokenizer_vocab_df['Word'] == '<UNK>']['Index'].values[0])
+            index = tokenizer_vocab_df[tokenizer_vocab_df['Word'] == token]['Index'].values
+            if len(index) > 0:
+                token_indices.append(index[0])
+            else:
+                # If the token is not in the vocabulary -> unknown token
+                token_indices.append(-2)
 
     # Pad the sequence to the maximum length
     if len(token_indices) > max_sequence_length:
@@ -224,14 +228,21 @@ for essay, position_index_pair in zip(training_examples, position_index_pairs_al
     print(f"token indices {k} appended")
     k += 1
 
+
 # Convert the list to a numpy array
 essays_tensor = np.array(essays_tensor)
+
+# Convert the numpy array to torch.tensor with dtype=torch.int32
+essays_tensor = torch.tensor(essays_tensor, dtype=torch.int32)
 
 # Save essays as a number representation in a tensor
 torch.save(essays_tensor, 'essays_tensor.pt')
 
 # Convert the list to a numpy array
 essays_tensor = np.array(essays_tensor)
+
+# Convert position_index_pairs_all to torch.tensor with dtype=torch.int32
+position_index_pairs_all = [torch.tensor(pair, dtype=torch.int32) for pair in position_index_pairs_all]
 
 # Print statistics
 print("Average length of essays:", average_length)
