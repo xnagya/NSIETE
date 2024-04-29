@@ -125,6 +125,7 @@ vocab_size = len(tokenizer.word_index) + 1
 
 # Save the vocabulary, if does not exist
 file_path = 'tokenizer_vocab_with_frequency_embedding.csv'
+file_path3 = 'embedding_matrix.npy'
 if not os.path.exists(file_path):
     word_index = tokenizer.word_index
     word_counts = tokenizer.word_counts
@@ -149,27 +150,58 @@ if not os.path.exists(file_path):
 
     # "Unknown" token and initialization of embedding vector
     unknown_token = '<UNK>'
-    embedding_matrix = np.zeros((vocab_size, embedding_dim))
-    unknown_vector = np.random.normal(size=(embedding_dim,))
+    unknown_vector = np.zeros(embedding_dim)
+    word_count = 0
 
-    # Update the vocabulary and embedding matrix based on GloVe embeddings
+    # Update the vocabulary based on GloVe embeddings
     for index, row in tokenizer_vocab_df.iterrows():
         word = row['Word']
-        i = row['Index']
-        if word in embeddings_index:
-            embedding_matrix[i] = embeddings_index[word]
-        else:
+
+        # Change token to <UNK> for words not in GloVe
+        if word not in embeddings_index:
             tokenizer_vocab_df.at[index, 'Word'] = unknown_token
-            embedding_matrix[i] = unknown_vector
+        else:
+            unknown_vector += embeddings_index[word]
+            word_count += 1
+
+    # Calculate average for unknown vector 
+    unknown_vector = np.divide(unknown_vector, word_count)
 
     # Remove duplicates and reset indices of the vocabulary DataFrame
     tokenizer_vocab_df = tokenizer_vocab_df.drop_duplicates(subset='Word').reset_index(drop=True)
 
+    # Add missing word to tokenizer
+    missing_token = '<MISSING>'
+    row_miss = [missing_token, 0, 0]
+    tokenizer_vocab_df 
+    tokenizer_vocab_df = pd.concat([pd.DataFrame([row_miss], columns=tokenizer_vocab_df.columns), tokenizer_vocab_df], ignore_index=True)
+
+    # Create embedding matrix, do not change vocab after this step!!!
+    new_vocab_size = tokenizer_vocab_df.shape[0]
+    embedding_matrix = np.zeros((new_vocab_size, embedding_dim))
+    print(embedding_matrix.shape)
+
+    for index, row in tokenizer_vocab_df.iterrows():
+        word = row['Word']
+        # Set index to index in vocab
+        tokenizer_vocab_df.at[index, 'Index'] = index
+
+        if(word == unknown_token):
+            embedding_matrix[index] = unknown_vector
+        elif(word == missing_token):
+            embedding_matrix[index] = np.zeros(embedding_dim)
+        else: 
+            embedding_matrix[index] = embeddings_index[word]
+    
     tokenizer_vocab_df.to_csv(file_path, index=False)
+    np.save(file_path3, embedding_matrix)
     print("Vocabulary saved")
 else:
     tokenizer_vocab_df = pd.read_csv(file_path)
     print("Vocabulary loaded")
+
+missing_word_index = tokenizer_vocab_df.loc[tokenizer_vocab_df['Word'] == "<MISSING>"]
+unknown_word_index = tokenizer_vocab_df.loc[tokenizer_vocab_df['Word'] == "<UNK>"]
 
 # Handling Missing Words
 position_index_pairs_all = []
@@ -203,27 +235,29 @@ essays_tensor = []
 
 # Iterate through each essay
 k = 0
+padding_index = -1
 for essay, position_index_pair in zip(training_examples, position_index_pairs_all):
     tokens = essay.split()
     token_indices = []
 
-    # Convert each token to its corresponding index in the vocabulary or -1 if missing
+    # Convert each token to its corresponding index in the vocabulary
     for i, token in enumerate(tokens):
         if any(position == i for position, _ in position_index_pair):
-            token_indices.append(-1)  # Missing word represented as -1
+            # Missing word
+            token_indices.append(missing_word_index)
         else:
             index = tokenizer_vocab_df[tokenizer_vocab_df['Word'] == token]['Index'].values
             if len(index) > 0:
                 token_indices.append(index[0])
             else:
                 # If the token is not in the vocabulary -> unknown token
-                token_indices.append(-2)
+                token_indices.append(unknown_word_index)
 
     # Pad the sequence to the maximum length
     if len(token_indices) > max_sequence_length:
         token_indices = token_indices[:max_sequence_length]
     else:
-        token_indices += [0] * (max_sequence_length - len(token_indices))
+        token_indices += [padding_index] * (max_sequence_length - len(token_indices))
 
     essays_tensor.append(token_indices)
     print(f"token indices {k} appended")
