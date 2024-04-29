@@ -232,17 +232,11 @@ for essay, position_index_pair in zip(training_examples, position_index_pairs_al
 # Convert the list to a numpy array
 essays_tensor = np.array(essays_tensor)
 
-# Convert the numpy array to torch.tensor with dtype=torch.int32
-essays_tensor = torch.tensor(essays_tensor, dtype=torch.int32)
-
 # Save essays as a number representation in a tensor
 torch.save(essays_tensor, 'essays_tensor.pt')
 
 # Convert the list to a numpy array
 essays_tensor = np.array(essays_tensor)
-
-# Convert position_index_pairs_all to torch.tensor with dtype=torch.int32
-position_index_pairs_all = [torch.tensor(pair, dtype=torch.int32) for pair in position_index_pairs_all]
 
 # Print statistics
 print("Average length of essays:", average_length)
@@ -265,11 +259,11 @@ position_index_pairs = position_index_pairs_all
 output_folder = 'output'
 os.makedirs(output_folder, exist_ok=True)
 essay_representation_file = os.path.join(output_folder, 'essays_tensor_representation.npy')
-np.save(essay_representation_file, essay_representation)
-print("Essay representations saved to:", essay_representation_file)
+np.save(essay_representation_file, np.array(essays_tensor))
+print("Essay representations saved to:", essay_representation_file, f"Type: {essay_representation}")
 position_index_pairs_file = os.path.join(output_folder, 'position_index_pairs.npy')
 np.save(position_index_pairs_file, position_index_pairs_array)
-print("Position-index pairs saved to:", position_index_pairs_file)
+print("Position-index pairs saved to:", position_index_pairs_file, f"Type: {position_index_pairs_array.dtype}")
 
 
 data = {
@@ -279,7 +273,6 @@ data = {
 
 df = pd.DataFrame(data)
 df.to_csv(os.path.join(output_folder, 'essays_with_positions.csv'), index=False)
-
 
 # save_dir = 'dataset'
 # os.makedirs(save_dir, exist_ok=True)
