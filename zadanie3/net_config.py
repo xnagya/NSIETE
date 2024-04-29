@@ -33,8 +33,9 @@ config_NN = Namespace (
     padding_index = 0, 
 
     # Embedding parameters
-    embedding_dropout = 0, 
+    embedding_dropout = 0.1, 
     embedding_features = 50, 
+    embedding_file = "", 
 
     # RNN
     rnn_layers = 3, 
