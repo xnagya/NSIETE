@@ -11,11 +11,8 @@ def dict_to_config(d: dict):
 # Experiment parameters
 project_entity = "matus13579"
 project_name = "NN-z3"
-#data_dir = "./data_norm/"
-
 
 # Trainer parameters
-# TODO metric names 
 model_path = "bestNN.tar"
 save_interval = 1
 
@@ -24,8 +21,7 @@ batch_size = 64
 learning_rate = 0.001
 betas = (0.9, 0.999)
 weight_decay = 0.0001
-# Ignore index for CES
-ignore_index = -1
+grad_clip = 5
 
 # NN params
 config_NN = Namespace (

@@ -103,11 +103,13 @@ def get_wordnet_pos(word):
     return tag_dict.get(tag, wordnet.NOUN)
 
 
+os.chdir(r"C:\Users\matul\Desktop\NSIETE\zadanie3")
 df = pd.read_csv('./datasets/Training_Essay_Data.csv')
 
 # Check if the cleaned text CSV file exists
 cleaned_text_file = 'cleaned_text.csv'
 if not os.path.exists(cleaned_text_file):
+    print("Cleaning dataset")
     df['clean_text'] = df['text'].apply(clean_text)
     df = df[df['clean_text'].str.split().apply(len) > 0]
     df.to_csv(cleaned_text_file, index=False)
