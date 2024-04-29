@@ -17,3 +17,4 @@ zadanie3/glove.6B.50d.txt
 /zadanie3/output
 zadanie3/cleaned_text.csv
 /zadanie3/output
+zadanie3/embedding_matrix.npy
