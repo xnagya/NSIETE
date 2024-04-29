@@ -9,14 +9,16 @@ from nltk.corpus import stopwords, wordnet
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from sklearn.model_selection import train_test_split
+from tensorflow.keras import *
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-# nltk.download('stopwords')
-# nltk.download('punkt')
-# nltk.download('wordnet')
-# nltk.download('averaged_perceptron_tagger')
-
+"""
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('wordnet')
+nltk.download('averaged_perceptron_tagger')
+"""
 
 # Initialize WordNetLemmatizer
 lemmatizer = WordNetLemmatizer()
@@ -102,6 +104,8 @@ def get_wordnet_pos(word):
     tag_dict = {"J": wordnet.ADJ, "N": wordnet.NOUN, "V": wordnet.VERB, "R": wordnet.ADV}
     return tag_dict.get(tag, wordnet.NOUN)
 
+# os.chdir(os.path.join(os.getcwd(), "zadanie3"))
+# print(os.getcwd())
 
 df = pd.read_csv('./datasets/Training_Essay_Data.csv')
 
@@ -135,8 +139,8 @@ if not os.path.exists(file_path):
 
     # Load pre-trained GloVe embeddings
     embeddings_index = {}
-    embedding_dim = 200
-    glove_file = 'glove.6B.200d.txt'
+    embedding_dim = 50
+    glove_file = f'glove.6B.50d.txt'
 
     with open(glove_file, encoding='utf-8') as f:
         for line in f:
