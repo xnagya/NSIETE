@@ -34,7 +34,7 @@ def text_to_tensor(text, tokenizer, position_index_pairs_all):
     return tensor_representation
 
 
-def create_missing_word_examples(text, tokenizer_vocab_df, min_missing_words=1, max_missing_words=1, max_essay_length=150):
+def create_missing_word_examples(text, tokenizer_vocab_df, min_missing_words=1, max_missing_words=1, max_essay_length=50):
     words = text.split()[:max_essay_length]
     if len(words) <= max_missing_words + 2:
         return 0
@@ -72,6 +72,7 @@ def create_missing_word_examples(text, tokenizer_vocab_df, min_missing_words=1, 
         missing_word_examples.append(input_text)
 
     position_index_pairs_all.append(position_index_pairs)
+    # print(position_index_pairs)
 
     return missing_word_examples
 
@@ -103,7 +104,7 @@ def get_wordnet_pos(word):
     return tag_dict.get(tag, wordnet.NOUN)
 
 
-os.chdir(r"C:\Users\matul\Desktop\NSIETE\zadanie3")
+os.chdir(r"D:\nagya\OneDrive - Slovenská technická univerzita v Bratislave\4 rocnik\letny\NSIETE\NSIETE\zadanie3")
 df = pd.read_csv('./datasets/Training_Essay_Data.csv')
 
 # Check if the cleaned text CSV file exists
@@ -200,8 +201,8 @@ else:
     tokenizer_vocab_df = pd.read_csv(file_path)
     print("Vocabulary loaded")
 
-missing_word_index = tokenizer_vocab_df.loc[tokenizer_vocab_df['Word'] == "<MISSING>"]
-unknown_word_index = tokenizer_vocab_df.loc[tokenizer_vocab_df['Word'] == "<UNK>"]
+missing_word_index = tokenizer_vocab_df.index[tokenizer_vocab_df['Word'] == "<MISSING>"][0]
+unknown_word_index = tokenizer_vocab_df.index[tokenizer_vocab_df['Word'] == "<UNK>"][0]
 
 # Handling Missing Words
 position_index_pairs_all = []
@@ -229,7 +230,7 @@ average_length = sum(essay_lengths) / len(essay_lengths)
 min_length = min(essay_lengths)
 
 # Vectorization
-max_sequence_length = 150
+max_sequence_length = 50
 
 essays_tensor = []
 
@@ -293,10 +294,10 @@ position_index_pairs = position_index_pairs_all
 # Save the essay representations and position-index pairs separately in the output folder
 output_folder = 'output'
 os.makedirs(output_folder, exist_ok=True)
-essay_representation_file = os.path.join(output_folder, 'essays_tensor_representation_max150_1miss.npy')
+essay_representation_file = os.path.join(output_folder, 'essays_tensor_representation_max50_1miss.npy')
 np.save(essay_representation_file, np.array(essays_tensor))
 print("Essay representations saved to:", essay_representation_file, f"Type: {essay_representation}")
-position_index_pairs_file = os.path.join(output_folder, 'position_index_pairs_max150_1miss.npy')
+position_index_pairs_file = os.path.join(output_folder, 'position_index_pairs_max50_1miss.npy')
 np.save(position_index_pairs_file, position_index_pairs_array)
 print("Position-index pairs saved to:", position_index_pairs_file, f"Type: {position_index_pairs_array.dtype}")
 
@@ -307,7 +308,7 @@ data = {
 }
 
 df = pd.DataFrame(data)
-df.to_csv(os.path.join(output_folder, 'essays_with_positions_max150_1miss.csv'), index=False)
+df.to_csv(os.path.join(output_folder, 'essays_with_positions_max50_1miss.csv'), index=False)
 
 # save_dir = 'dataset'
 # os.makedirs(save_dir, exist_ok=True)
