@@ -139,15 +139,15 @@ class Trainer:
         # Metrics 
         self.acc = MulticlassAccuracy(
             num_classes = vocab_size
-            , average = "weighted"
+            , average = "macro"
             )
         self.roc = MulticlassAUROC(
             num_classes = vocab_size
-            , average = "weighted"
+            , average = "macro"
         )
         self.f1 = MulticlassF1Score(
             num_classes = vocab_size
-            , average = "weighted"
+            , average = "macro"
         )
 
         # Saving and loading model
