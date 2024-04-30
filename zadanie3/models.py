@@ -475,19 +475,6 @@ class RNN(nn.Module):
         # Embedding 
         input = self.encoder(input)
 
-        """
-        try:
-            input = self.encoder(input)
-        except IndexError:
-            for essey in input:
-                for idx in essey:
-                    try: 
-                        self.encoder(idx)
-                    except:
-                        print(f"wrong index = {idx}")
-            return None
-        """
-
         # Dropout 
         input = self.dropout(input)
 

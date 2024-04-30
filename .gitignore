@@ -20,3 +20,4 @@ zadanie3/cleaned_text.csv
 zadanie3/embedding_matrix.npy
 zadanie3/essays_tensor.pt
 zadanie3/position_index_pairs.npy
+zadanie3/wandb/
