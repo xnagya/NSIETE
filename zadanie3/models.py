@@ -5,14 +5,11 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
+import numpy as np
 import abc
-from torchvision import models
-from collections import OrderedDict
-from torchtext.vocab import GloVe
 
 # %% [markdown]
-# ## Recurent Neural Network
+# ## Custom LSTM Networks
 
 # %%
 class LSTM_custom(nn.Module):
@@ -332,9 +329,8 @@ class RNN(nn.Module):
         try:
             # Embedding layer
             drop_embed = params['embedding_dropout']
-            pad_idx = params['padding_index']
-            embedding_dims = params['embedding_features']
             file_path = params['embedding_file']
+            self.pad_idx = params['padding_index']
 
             # RNN layer
             self.layer_count = params['rnn_layers']
@@ -344,12 +340,17 @@ class RNN(nn.Module):
         except KeyError as e:
             raise Exception(f'Parameter "{e.args[0]}" NOT found!')
         
+        # Load embedding matrix
+        embed_matrix = torch.from_numpy(np.load(file_path)).type(torch.float32)
+        mat_size, embedding_dims = embed_matrix.shape
+
+        assert (vocabulary_size == mat_size), f"Vocabulary size and embedding matrix have different shapes. vocab = {vocabulary_size} matrix = {mat_size}"
+            
         # Encoder layer = encodes indices of words to embedding vectors
-        """"
         self.encoder = nn.Embedding.from_pretrained (
-            embeddings = torch.load(file_path), 
-            freeze= True, 
-            padding_idx = pad_idx
+            embeddings = embed_matrix, 
+            freeze = True, 
+            padding_idx = self.pad_idx
             )
             
         """
@@ -358,7 +359,7 @@ class RNN(nn.Module):
             , embedding_dim = embedding_dims
             , padding_idx = pad_idx
             )
-
+        """
 
         # Dropout layer -> drops embedding features
         self.dropout = nn.Dropout(drop_embed)
@@ -369,7 +370,7 @@ class RNN(nn.Module):
         match self.rnn_type:
             # RNN - built_in
             case "simple":
-                # Reduce hidden_size if bidirectional
+                # Reduce hidden_size to half if bidirectional
                 output_size = (hidden_size // 2) if bidir else hidden_size
 
                 self.rnns.append(nn.RNN(
@@ -440,7 +441,6 @@ class RNN(nn.Module):
         # Output layer initialization
         for name, par in self.decoder.named_parameters():
             # Initialize weights
-            # TODO change weight init
             if 'weight' in name:
                 nn.init.normal_(par)
 
@@ -448,28 +448,45 @@ class RNN(nn.Module):
             elif 'bias' in name:
                 par.data.fill_(0)
 
-    # Remove zeroes (padding) from tensor
+    # Remove as many as possible zeroes (padding) from tensor
     # t.shape = (batch_size, sequence_length)
-    def reduce_tensor(t: torch.tensor):
-        zeros_count = (t == 0.).sum(dim=1)
-        print(zeros_count)
+    def reduce_tensor(t: torch.tensor, pad_index):
+        zeros_count = (t == float(pad_index)).sum(dim=1)
+        #print(zeros_count)
+        
         lowest_count = torch.min(zeros_count)
 
         new_length = t.shape[1] - lowest_count
         return t[:,0 : new_length]
 
     # Input shape = (batch_size, sequence_length)
-    def forward(self, input, indexes: tuple):
+    def forward(self, input, indexes: torch.tensor):
         # Reduce input sequence length
-        input = RNN.reduce_tensor(input)
+        input = RNN.reduce_tensor(input, self.pad_idx)
 
         batch_size, sequence_length  = input.shape
 
-        for n in indexes:
-            assert n < sequence_length, f"Wrong index '{n}' for input with length {sequence_length}."
+        """
+        for row in indexes:
+            for val in row:
+                assert (val < sequence_length), f"Wrong index position '{val}' for input with length {sequence_length}."
+        """
 
         # Embedding 
         input = self.encoder(input)
+
+        """
+        try:
+            input = self.encoder(input)
+        except IndexError:
+            for essey in input:
+                for idx in essey:
+                    try: 
+                        self.encoder(idx)
+                    except:
+                        print(f"wrong index = {idx}")
+            return None
+        """
 
         # Dropout 
         input = self.dropout(input)
@@ -477,6 +494,7 @@ class RNN(nn.Module):
         # Clear layer states
         self.states = []
 
+        # Custom LSTM -> multiple states (one per layer)
         if (self.rnn_type != "simple"):
             self.state = []
 
@@ -490,37 +508,46 @@ class RNN(nn.Module):
                 current_state = self.state[i]
                 input, current_state = layer.forward(input, current_state)
                 self.state[i] = current_state
+
+        # RNN -> states of layers are in one tensor
         else:
-            # Initiate rnn state
+            # Initiate RNN state
             self.state = None
 
             for layer in self.rnns:
                 input, self.state = layer.forward(input, self.state)
 
         # Extract missing words based od indexes
-        input = input[:,indexes,:]
+        output = torch.empty(input.shape[0], indexes.shape[1], input.shape[2])
+        for i in range(batch_size):
+            row = indexes[i,:].tolist()
+            words = input[i,row,:].unsqueeze(dim=0)
+            torch.cat((output, words))
 
         # Create output with linear layer
-        return self.decoder(input)
+        return self.decoder(output)
 
 # %%
 """
 from net_config import *
 
-vocab_size = 100
+vocab_size = 7054
 
 # Input tensor
 batch_size = 8
 seq_length = 10
 
 test_input = torch.randint(0, vocab_size, (batch_size, seq_length))
-print(f"INPUT SHAPE = {test_input.shape}")
+test_indexes = torch.tensor([[0], [0], [0], [0], [0], [0], [0], [0]])
 
+print(f"INPUT SHAPE = {test_input.shape}")
+print(f"INDEXES SHAPE = {test_indexes.shape}")
 #print(test_input)
+
 
 net = RNN("lstm", vocab_size, config_to_dict(config_NN))
 
-output = net.forward(test_input, (0, 9))
+output = net.forward(test_input, test_indexes)
 print(f"OUTPUT SHAPE = {output.shape}")
 
 output = torch.argmax(output, dim=2)

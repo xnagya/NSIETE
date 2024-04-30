@@ -17,7 +17,7 @@ model_path = "bestNN.tar"
 save_interval = 1
 
 # Trainer hyperparameters
-batch_size = 64
+batch_size = 256
 learning_rate = 0.001
 betas = (0.9, 0.999)
 weight_decay = 0.0001
@@ -30,8 +30,7 @@ config_NN = Namespace (
 
     # Embedding parameters
     embedding_dropout = 0.1, 
-    embedding_features = 50, 
-    embedding_file = "", 
+    embedding_file = "embedding_matrix.npy", 
 
     # RNN
     rnn_layers = 3, 

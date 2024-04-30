@@ -104,7 +104,8 @@ def get_wordnet_pos(word):
     return tag_dict.get(tag, wordnet.NOUN)
 
 
-os.chdir(r"D:\nagya\OneDrive - Slovenská technická univerzita v Bratislave\4 rocnik\letny\NSIETE\NSIETE\zadanie3")
+#os.chdir(r"D:\nagya\OneDrive - Slovenská technická univerzita v Bratislave\4 rocnik\letny\NSIETE\NSIETE\zadanie3")
+os.chdir(r"C:\Users\matul\Desktop\NSIETE\zadanie3")
 df = pd.read_csv('./datasets/Training_Essay_Data.csv')
 
 # Check if the cleaned text CSV file exists
@@ -172,10 +173,14 @@ if not os.path.exists(file_path):
     tokenizer_vocab_df = tokenizer_vocab_df.drop_duplicates(subset='Word').reset_index(drop=True)
 
     # Add missing word to tokenizer
+    padding_token = '<PAD>'
+    row_pad = [padding_token, 0, 0]
     missing_token = '<MISSING>'
-    row_miss = [missing_token, 0, 0]
+    row_miss = [missing_token, tokenizer_vocab_df.shape[0], 0]
+
     tokenizer_vocab_df 
-    tokenizer_vocab_df = pd.concat([pd.DataFrame([row_miss], columns=tokenizer_vocab_df.columns), tokenizer_vocab_df], ignore_index=True)
+    tokenizer_vocab_df = pd.concat([pd.DataFrame([row_pad], columns=tokenizer_vocab_df.columns), tokenizer_vocab_df], ignore_index=True)
+    tokenizer_vocab_df = pd.concat([tokenizer_vocab_df, pd.DataFrame([row_miss], columns=tokenizer_vocab_df.columns)], ignore_index=True)
 
     # Create embedding matrix, do not change vocab after this step!!!
     new_vocab_size = tokenizer_vocab_df.shape[0]
@@ -191,6 +196,8 @@ if not os.path.exists(file_path):
             embedding_matrix[index] = unknown_vector
         elif(word == missing_token):
             embedding_matrix[index] = np.zeros(embedding_dim)
+        elif(word == padding_token):
+            embedding_matrix[index] = np.zeros(embedding_dim)
         else: 
             embedding_matrix[index] = embeddings_index[word]
     
@@ -203,15 +210,17 @@ else:
 
 missing_word_index = tokenizer_vocab_df.index[tokenizer_vocab_df['Word'] == "<MISSING>"][0]
 unknown_word_index = tokenizer_vocab_df.index[tokenizer_vocab_df['Word'] == "<UNK>"][0]
+padding_index = tokenizer_vocab_df.index[tokenizer_vocab_df['Word'] == "<PAD>"][0]
 
 # Handling Missing Words
 position_index_pairs_all = []
+max_sequence_length = 150
 
 # Creating Training Examples
 training_examples = []
 k = 0
 for text in df['clean_text']:
-    examples = create_missing_word_examples(text, tokenizer_vocab_df)
+    examples = create_missing_word_examples(text, tokenizer_vocab_df, 1, 1, max_sequence_length)
     if examples == 0:
         continue
     training_examples.extend(examples)
@@ -229,14 +238,10 @@ essay_lengths = [len(text.split()) for text in df['clean_text']]
 average_length = sum(essay_lengths) / len(essay_lengths)
 min_length = min(essay_lengths)
 
-# Vectorization
-max_sequence_length = 50
-
 essays_tensor = []
 
 # Iterate through each essay
 k = 0
-padding_index = -1
 for essay, position_index_pair in zip(training_examples, position_index_pairs_all):
     tokens = essay.split()
     token_indices = []
@@ -294,10 +299,10 @@ position_index_pairs = position_index_pairs_all
 # Save the essay representations and position-index pairs separately in the output folder
 output_folder = 'output'
 os.makedirs(output_folder, exist_ok=True)
-essay_representation_file = os.path.join(output_folder, 'essays_tensor_representation_max50_1miss.npy')
+essay_representation_file = os.path.join(output_folder, 'essays_tensor_representation_max' + str(max_sequence_length) + '_1miss.npy')
 np.save(essay_representation_file, np.array(essays_tensor))
 print("Essay representations saved to:", essay_representation_file, f"Type: {essay_representation}")
-position_index_pairs_file = os.path.join(output_folder, 'position_index_pairs_max50_1miss.npy')
+position_index_pairs_file = os.path.join(output_folder, 'position_index_pairs_max' + str(max_sequence_length) + '_1miss.npy')
 np.save(position_index_pairs_file, position_index_pairs_array)
 print("Position-index pairs saved to:", position_index_pairs_file, f"Type: {position_index_pairs_array.dtype}")
 
@@ -308,7 +313,7 @@ data = {
 }
 
 df = pd.DataFrame(data)
-df.to_csv(os.path.join(output_folder, 'essays_with_positions_max50_1miss.csv'), index=False)
+df.to_csv(os.path.join(output_folder, 'essays_with_positions_max' + str(max_sequence_length) + '_1miss.csv'), index=False)
 
 # save_dir = 'dataset'
 # os.makedirs(save_dir, exist_ok=True)
