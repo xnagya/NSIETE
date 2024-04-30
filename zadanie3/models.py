@@ -318,7 +318,7 @@ class LSTM_adam(LSTM_custom):
 ALL_RNNtypes = ["simple", "lstm", "lstm_M", "lstm_A"]
 
 class RNN(nn.Module):
-    def __init__(self, rnn_type, vocabulary_size, params: dict):
+    def __init__(self, rnn_type, embedding_path, params: dict):
         torch.set_default_dtype(torch.float32)
         super().__init__()
 
@@ -329,8 +329,8 @@ class RNN(nn.Module):
         try:
             # Embedding layer
             drop_embed = params['embedding_dropout']
-            file_path = params['embedding_file']
             self.pad_idx = params['padding_index']
+            vocabulary_size = params['vocab_size']
 
             # RNN layer
             self.layer_count = params['rnn_layers']
@@ -341,11 +341,11 @@ class RNN(nn.Module):
             raise Exception(f'Parameter "{e.args[0]}" NOT found!')
         
         # Load embedding matrix
-        embed_matrix = torch.from_numpy(np.load(file_path)).type(torch.float32)
-        mat_size, embedding_dims = embed_matrix.shape
+        embed_matrix = torch.from_numpy(np.load(embedding_path)).type(torch.float32)
+        matrix_size, embedding_dims = embed_matrix.shape
 
-        assert (vocabulary_size == mat_size), f"Vocabulary size and embedding matrix have different shapes. vocab = {vocabulary_size} matrix = {mat_size}"
-            
+        assert (matrix_size == vocabulary_size), f"Size of embedding matrix '{matrix_size}' is different from vocabulary size '{vocabulary_size}'!"
+
         # Encoder layer = encodes indices of words to embedding vectors
         self.encoder = nn.Embedding.from_pretrained (
             embeddings = embed_matrix, 
@@ -530,22 +530,19 @@ class RNN(nn.Module):
 # %%
 """
 from net_config import *
-
-vocab_size = 7054
+embedding_path = "embedding_matrix.npy"
 
 # Input tensor
 batch_size = 8
 seq_length = 10
 
-test_input = torch.randint(0, vocab_size, (batch_size, seq_length))
-test_indexes = torch.tensor([[0], [0], [0], [0], [0], [0], [0], [0]])
+test_input = torch.randint(0, 7054, (batch_size, seq_length))
+test_indexes = torch.tensor([[0], [1], [2], [3], [4], [5], [6], [7]])
 
 print(f"INPUT SHAPE = {test_input.shape}")
 print(f"INDEXES SHAPE = {test_indexes.shape}")
-#print(test_input)
 
-
-net = RNN("lstm", vocab_size, config_to_dict(config_NN))
+net = RNN("simple", embedding_path, config_to_dict(config_NN))
 
 output = net.forward(test_input, test_indexes)
 print(f"OUTPUT SHAPE = {output.shape}")

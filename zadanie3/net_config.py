@@ -14,7 +14,6 @@ project_name = "NN-z3"
 
 # Trainer parameters
 model_path = "bestNN.tar"
-save_interval = 1
 
 # Trainer hyperparameters
 batch_size = 256
@@ -30,11 +29,11 @@ config_NN = Namespace (
 
     # Embedding parameters
     embedding_dropout = 0.1, 
-    embedding_file = "embedding_matrix.npy", 
+    vocab_size = 7054, 
 
     # RNN
     rnn_layers = 3, 
-    bidirectional = True, 
+    bidirectional = False, 
     hidden_features = 64, 
     rnn_dropout = 0,
     momentum = 0.2,

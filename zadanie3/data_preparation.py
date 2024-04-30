@@ -214,13 +214,13 @@ padding_index = tokenizer_vocab_df.index[tokenizer_vocab_df['Word'] == "<PAD>"][
 
 # Handling Missing Words
 position_index_pairs_all = []
-max_sequence_length = 150
+max_sequence_length = 50
 
 # Creating Training Examples
 training_examples = []
 k = 0
 for text in df['clean_text']:
-    examples = create_missing_word_examples(text, tokenizer_vocab_df, 1, 1, max_sequence_length)
+    examples = create_missing_word_examples(text, tokenizer_vocab_df, 5, 5, max_sequence_length)
     if examples == 0:
         continue
     training_examples.extend(examples)
@@ -299,10 +299,10 @@ position_index_pairs = position_index_pairs_all
 # Save the essay representations and position-index pairs separately in the output folder
 output_folder = 'output'
 os.makedirs(output_folder, exist_ok=True)
-essay_representation_file = os.path.join(output_folder, 'essays_tensor_representation_max' + str(max_sequence_length) + '_1miss.npy')
+essay_representation_file = os.path.join(output_folder, 'essays_tensor_representation_max' + str(max_sequence_length) + '_5miss.npy')
 np.save(essay_representation_file, np.array(essays_tensor))
 print("Essay representations saved to:", essay_representation_file, f"Type: {essay_representation}")
-position_index_pairs_file = os.path.join(output_folder, 'position_index_pairs_max' + str(max_sequence_length) + '_1miss.npy')
+position_index_pairs_file = os.path.join(output_folder, 'position_index_pairs_max' + str(max_sequence_length) + '_5miss.npy')
 np.save(position_index_pairs_file, position_index_pairs_array)
 print("Position-index pairs saved to:", position_index_pairs_file, f"Type: {position_index_pairs_array.dtype}")
 
@@ -313,7 +313,7 @@ data = {
 }
 
 df = pd.DataFrame(data)
-df.to_csv(os.path.join(output_folder, 'essays_with_positions_max' + str(max_sequence_length) + '_1miss.csv'), index=False)
+df.to_csv(os.path.join(output_folder, 'essays_with_positions_max' + str(max_sequence_length) + '_5miss.csv'), index=False)
 
 # save_dir = 'dataset'
 # os.makedirs(save_dir, exist_ok=True)
