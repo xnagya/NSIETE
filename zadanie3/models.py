@@ -39,6 +39,18 @@ class LSTM_custom(nn.Module):
         # Add dropout layer
         self.dropout = nn.Dropout(drop)
 
+    def move_to_device(self, device):
+        self.weight_ih = self.weight_ih.to(device)
+        self.weight_hh = self.weight_hh.to(device)
+        self.bias_ih = self.bias_ih.to(device)
+        self.bias_hh = self.bias_hh.to(device)
+
+        if self.bidir:
+            self.weight_Rih = self.weight_Rih.to(device)
+            self.weight_Rhh = self.weight_Rhh.to(device)
+            self.bias_Rih = self.bias_Rih.to(device)
+            self.bias_Rhh = self.bias_Rhh.to(device)
+
     # Forward pass for LSTM layer
     def forward(self, input, state, device):
         _ , seq_length, _ = input.shape
@@ -50,7 +62,7 @@ class LSTM_custom(nn.Module):
 
         for i in range(0, seq_length, 1):
             # Get word from sequence
-            x = input[:,i,:].to(device)
+            x = input[:,i,:]
 
             # Forward pass for word
             x, state = self.forward_cell(x, state)
@@ -66,7 +78,7 @@ class LSTM_custom(nn.Module):
 
             for i in range(seq_length - 1, -1, -1):
                 # Get word from sequence
-                x = input[:,i,:].to(device)
+                x = input[:,i,:]
 
                 # Forward pass for word
                 x, backward_state = self.reverse_cell(x, backward_state)
@@ -481,6 +493,7 @@ class RNN(nn.Module):
             # Initiate layer states
             for layer in self.rnns:
                 self.state.append(layer.initial_state(batch_size))
+                layer.move_to_device(device)
 
             # Compute RNN forward for each layer
             for i, layer in enumerate(self.rnns):
