@@ -167,18 +167,6 @@ class Trainer:
         self.data_val = DataLoader(data_val, batch_size = cfg.batch_size, shuffle = True)
         self.data_test = DataLoader(data_test, batch_size = cfg.batch_size, shuffle = False)
 
-    # Extract missing words based od indexes
-    def get_missing(self, input: torch.tensor, indexes: torch.tensor):
-        batch_size = input.shape[0]
-        output = torch.empty(batch_size, indexes.shape[1], input.shape[2]).to(self.device)
-
-        for i in range(batch_size):
-            row = indexes[i,:].tolist()
-            words = input[i,row,:].unsqueeze(dim=0)
-            torch.cat((output, words))
-
-        return output
-
     def save_model(self, current_epoch):  
         if self.best_model is not None:
             checkpoint = {
@@ -210,8 +198,7 @@ class Trainer:
             self.optimizer.zero_grad()
 
             # Forward pass
-            x = self.network(x)
-            x = self.get_missing(x, pos)
+            x = self.network(x, pos, self.device)
 
             # Calculate loss
             loss = self.loss_fn(x.view(-1, x.shape[-1]), y.view(-1))
@@ -240,8 +227,7 @@ class Trainer:
                 x, pos, y = x.to(self.device), pos.to(self.device), y.to(self.device)
 
                 # Forward pass
-                x = self.network(x)
-                x = self.get_missing(x, pos)
+                x = self.network(x, pos, self.device)
 
                 # Calculate loss
                 loss = self.loss_fn(x.view(-1, x.shape[-1]), y.view(-1))
@@ -262,8 +248,7 @@ class Trainer:
                 x, pos, y = x.to(self.device), pos.to(self.device), y.to(self.device)
 
                 # Forward pass
-                x = self.network(x)
-                x = self.get_missing(x, pos)
+                x = self.network(x, pos, self.device)
 
                 classes = torch.argmax(x, dim=2)
                 confidence = torch.softmax(x, dim=2)

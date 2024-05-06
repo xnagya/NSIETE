@@ -452,7 +452,7 @@ class RNN(nn.Module):
         return t[:,0 : new_length]
 
     # Input shape = (batch_size, sequence_length)
-    def forward(self, input):
+    def forward(self, input, indexes: torch.tensor, device):
         # Reduce input sequence length
         input = RNN.reduce_tensor(input, self.pad_idx)
 
@@ -496,8 +496,16 @@ class RNN(nn.Module):
             for layer in self.rnns:
                 input, self.state = layer.forward(input, self.state)
 
+        # Extract missing words based od indexes
+        output = torch.empty(input.shape[0], indexes.shape[1], input.shape[2]).to(device)
+        for i in range(batch_size):
+            row = indexes[i,:].tolist()
+            words = input[i,row,:].unsqueeze(dim=0)
+            torch.cat((output, words))
+
         # Create output with linear layer
-        return self.decoder(input)
+        return self.decoder(output)
+    
 
 # %%
 """
