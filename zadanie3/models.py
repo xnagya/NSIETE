@@ -349,17 +349,9 @@ class RNN(nn.Module):
         # Encoder layer = encodes indices of words to embedding vectors
         self.encoder = nn.Embedding.from_pretrained (
             embeddings = embed_matrix, 
-            freeze = True, 
+            freeze = False, 
             padding_idx = self.pad_idx
             )
-            
-        """
-        self.encoder = nn.Embedding(
-            num_embeddings = vocabulary_size
-            , embedding_dim = embedding_dims
-            , padding_idx = pad_idx
-            )
-        """
 
         # Dropout layer -> drops embedding features
         self.dropout = nn.Dropout(drop_embed)
@@ -442,10 +434,10 @@ class RNN(nn.Module):
         for name, par in self.decoder.named_parameters():
             # Initialize weights
             if 'weight' in name:
-                nn.init.normal_(par)
+                nn.init.xavier_uniform_(par)
 
             # Initialize bias
-            elif 'bias' in name:
+            if 'bias' in name:
                 par.data.fill_(0)
 
     # Remove as many as possible zeroes (padding) from tensor

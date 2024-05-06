@@ -131,7 +131,7 @@ class Trainer:
         )
 
         # Loss function
-        self.loss_fn = nn.CrossEntropyLoss()
+        self.loss_fn = nn.CrossEntropyLoss(reduction='sum')
 
         # Class for saving metrics
         self.stats = Statistics()
@@ -140,15 +140,15 @@ class Trainer:
         self.acc = MulticlassAccuracy(
             num_classes = vocab_size
             , average = "macro"
-            )
+            ).to(self.device)
         self.roc = MulticlassAUROC(
             num_classes = vocab_size
             , average = "macro"
-        )
+            ).to(self.device)
         self.f1 = MulticlassF1Score(
             num_classes = vocab_size
             , average = "macro"
-        )
+            ).to(self.device)
 
         # Saving and loading model
         self.best_model = None
@@ -210,7 +210,7 @@ class Trainer:
             loss.backward()
 
             # Clip gradients
-            grad_norm = torch.nn.utils.clip_grad_norm(self.network.parameters(), cfg.grad_clip)
+            grad_norm = torch.nn.utils.clip_grad_norm_(self.network.parameters(), cfg.grad_clip)
             self.stats.update("grad", grad_norm)
 
             self.optimizer.step()

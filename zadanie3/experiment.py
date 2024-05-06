@@ -31,12 +31,11 @@ class wanDB_run:
         #wandb.finish()
         
         self.run = wandb.init(
-        entity = cfg.project_entity, 
-        project = cfg.project_name,     
-        name = run_name, 
-        id = run_id, 
-        reinit=True, 
-        #settings = wandb.Settings(start_method="fork")
+            entity = cfg.project_entity, 
+            project = cfg.project_name,     
+            name = run_name, 
+            id = run_id, 
+            reinit = True, 
         )
 
         wandb.config = cfg.config_to_dict(cfg.config_NN)

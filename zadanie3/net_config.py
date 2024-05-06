@@ -17,10 +17,10 @@ model_path = "bestNN.tar"
 
 # Trainer hyperparameters
 batch_size = 256
-learning_rate = 0.001
+learning_rate = 0.01
 betas = (0.9, 0.999)
-weight_decay = 0.0001
-grad_clip = 5
+weight_decay = 0.001
+grad_clip = 10
 
 # NN params
 config_NN = Namespace (
@@ -28,14 +28,14 @@ config_NN = Namespace (
     padding_index = 0, 
 
     # Embedding parameters
-    embedding_dropout = 0.1, 
+    embedding_dropout = 0.2, 
     vocab_size = 7054, 
 
     # RNN
     rnn_layers = 3, 
     bidirectional = False, 
-    hidden_features = 64, 
-    rnn_dropout = 0,
+    hidden_features = 256, 
+    rnn_dropout = 0.2,
     momentum = 0.2,
     stepsize = 0.5, 
     rnn_beta = 0.3, 
