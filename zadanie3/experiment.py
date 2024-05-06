@@ -25,7 +25,7 @@ from trainer import *
 
 # %%
 class wanDB_run: 
-    def __init__(self, run_name, run_id, model: nn.Module, save_interval = None):
+    def __init__(self, run_name, model: nn.Module, save_interval = None):
         wandb.login()
         
         #wandb.finish()
@@ -34,7 +34,6 @@ class wanDB_run:
             entity = cfg.project_entity, 
             project = cfg.project_name,     
             name = run_name, 
-            id = run_id, 
             reinit = True, 
         )
 
