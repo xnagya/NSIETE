@@ -52,7 +52,7 @@ class LSTM_custom(nn.Module):
             self.bias_Rhh = self.bias_Rhh.to(device)
 
     # Forward pass for LSTM layer
-    def forward(self, input, state, device):
+    def forward(self, input, state):
         _ , seq_length, _ = input.shape
 
         backward_state = state
@@ -124,9 +124,9 @@ class LSTM_basic(LSTM_custom):
         
         super().__init__(input_size, hidden_size, bidir, drop)
         
-    def initial_state(self, batch_size):
-        h0 = torch.zeros(batch_size, self.gates_size // 4)
-        c0 = torch.zeros(batch_size, self.gates_size // 4)
+    def initial_state(self, batch_size, device):
+        h0 = torch.zeros(batch_size, self.gates_size // 4).to(device)
+        c0 = torch.zeros(batch_size, self.gates_size // 4).to(device)
         return (h0, c0)
     
     # Computes forward for one timestep (one word of sequence)
@@ -191,10 +191,10 @@ class LSTM_momentum(LSTM_custom):
         
         super().__init__(input_size, hidden_size, bidir, drop)
         
-    def initial_state(self, batch_size):
-        h0 = torch.zeros(batch_size, self.gates_size // 4)
-        c0 = torch.zeros(batch_size, self.gates_size // 4)
-        v0 = torch.zeros(batch_size, self.gates_size)
+    def initial_state(self, batch_size, device):
+        h0 = torch.zeros(batch_size, self.gates_size // 4).to(device)
+        c0 = torch.zeros(batch_size, self.gates_size // 4).to(device)
+        v0 = torch.zeros(batch_size, self.gates_size).to(device)
         return (h0, c0, v0)
 
     # Computes forward for one timestep (one word of sequence)
@@ -264,11 +264,11 @@ class LSTM_adam(LSTM_custom):
         
         super().__init__(input_size, hidden_size, bidir, drop)
         
-    def initial_state(self, batch_size):
-        h0 = torch.zeros(batch_size, self.gates_size // 4)
-        c0 = torch.zeros(batch_size, self.gates_size // 4)
-        v0 = torch.zeros(batch_size, self.gates_size)
-        m0 = torch.zeros(batch_size, self.gates_size)
+    def initial_state(self, batch_size, device):
+        h0 = torch.zeros(batch_size, self.gates_size // 4).to(device)
+        c0 = torch.zeros(batch_size, self.gates_size // 4).to(device)
+        v0 = torch.zeros(batch_size, self.gates_size).to(device)
+        m0 = torch.zeros(batch_size, self.gates_size).to(device)
         return (h0, c0, v0, m0)
 
     # Computes forward for one timestep (one word of sequence)
@@ -492,14 +492,14 @@ class RNN(nn.Module):
 
             # Initiate layer states
             for layer in self.rnns:
-                self.state.append(layer.initial_state(batch_size))
+                self.state.append(layer.initial_state(batch_size, device))
                 layer.move_to_device(device)
 
             # Compute RNN forward for each layer
             for i, layer in enumerate(self.rnns):
                 #print(lstm)
                 current_state = self.state[i]
-                input, current_state = layer.forward(input, current_state, device)
+                input, current_state = layer.forward(input, current_state)
                 self.state[i] = current_state
 
         # RNN -> states of layers are in one tensor
