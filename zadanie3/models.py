@@ -43,8 +43,7 @@ class LSTM_custom(nn.Module):
     def forward(self, input, state, device):
         _ , seq_length, _ = input.shape
 
-        backward_state = map(_.to(device), state)
-        state = map(_.to(device), state)
+        backward_state = state
         
         # Forward pass for each word in sequence
         layer_output = []
