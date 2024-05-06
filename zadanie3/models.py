@@ -40,16 +40,18 @@ class LSTM_custom(nn.Module):
         self.dropout = nn.Dropout(drop)
 
     # Forward pass for LSTM layer
-    def forward(self, input, state):
+    def forward(self, input, state, device):
         _ , seq_length, _ = input.shape
-        backward_state = state
+
+        backward_state = state.to(device)
+        state = state.to(device)
         
         # Forward pass for each word in sequence
         layer_output = []
 
         for i in range(0, seq_length, 1):
             # Get word from sequence
-            x = input[:,i,:]
+            x = input[:,i,:].to(device)
 
             # Forward pass for word
             x, state = self.forward_cell(x, state)
@@ -65,7 +67,7 @@ class LSTM_custom(nn.Module):
 
             for i in range(seq_length - 1, -1, -1):
                 # Get word from sequence
-                x = input[:,i,:]
+                x = input[:,i,:].to(device)
 
                 # Forward pass for word
                 x, backward_state = self.reverse_cell(x, backward_state)
@@ -494,7 +496,7 @@ class RNN(nn.Module):
             self.state = None
 
             for layer in self.rnns:
-                input, self.state = layer.forward(input, self.state)
+                input, self.state = layer.forward(input, self.state, device)
 
         # Extract missing words based od indexes
         output = torch.empty(input.shape[0], indexes.shape[1], input.shape[2]).to(device)
