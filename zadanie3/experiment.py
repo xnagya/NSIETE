@@ -34,7 +34,8 @@ class wanDB_run:
         entity = cfg.project_entity, 
         project = cfg.project_name,     
         name = run_name, 
-        id = run_id
+        id = run_id, 
+        settings = wandb.Settings(start_method="fork")
         )
 
         wandb.config = cfg.config_to_dict(cfg.config_NN)
