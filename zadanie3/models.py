@@ -487,7 +487,7 @@ class RNN(nn.Module):
             for i, layer in enumerate(self.rnns):
                 #print(lstm)
                 current_state = self.state[i]
-                input, current_state = layer.forward(input, current_state)
+                input, current_state = layer.forward(input, current_state, device)
                 self.state[i] = current_state
 
         # RNN -> states of layers are in one tensor
@@ -496,7 +496,7 @@ class RNN(nn.Module):
             self.state = None
 
             for layer in self.rnns:
-                input, self.state = layer.forward(input, self.state, device)
+                input, self.state = layer.forward(input, self.state)
 
         # Extract missing words based od indexes
         output = torch.empty(input.shape[0], indexes.shape[1], input.shape[2]).to(device)
