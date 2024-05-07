@@ -36,7 +36,7 @@ config_NN = Namespace (
     bidirectional = False, 
     hidden_features = 256, 
     rnn_dropout = 0.2,
-    momentum = 0.2,
-    stepsize = 0.5, 
-    rnn_beta = 0.3, 
+    momentum = 0.1,
+    stepsize = 0.6, 
+    rnn_beta = 0.2, 
 )
