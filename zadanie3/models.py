@@ -483,9 +483,6 @@ class RNN(nn.Module):
         # Dropout 
         input = self.dropout(input)
 
-        # Clear layer states
-        self.states = []
-
         # Custom LSTM -> multiple states (one per layer)
         if (self.rnn_type != "simple"):
             self.state = []
@@ -493,7 +490,6 @@ class RNN(nn.Module):
             # Initiate layer states
             for layer in self.rnns:
                 self.state.append(layer.initial_state(batch_size, device))
-                layer.move_to_device(device)
 
             # Compute RNN forward for each layer
             for i, layer in enumerate(self.rnns):
